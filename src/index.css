@@ -227,6 +227,46 @@ h6 {
   }
 }
 
+/* ========================================
+   MOBILE RESPONSIVE
+   ======================================== */
+
+/* Safe area insets for notched phones */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Mobile-specific adjustments */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 16px;
+  }
+
+  h1 {
+    font-size: 1.75rem !important;
+  }
+
+  .glass-card {
+    border-radius: 12px;
+  }
+
+  /* Reduce motion on mobile */
+  .glass-card:hover {
+    transform: none;
+  }
+}
+
+/* Touch-friendly tap targets */
+@media (hover: none) {
+
+  .btn,
+  button {
+    min-height: 44px;
+  }
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

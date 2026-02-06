@@ -149,8 +149,8 @@ export function Dashboard() {
 
     return (
         <div className="min-h-screen bg-premium text-foreground pb-40">
-            {/* PixelBlast Background - behind all content */}
-            <div className="fixed inset-0 -z-10 pointer-events-none opacity-30">
+            {/* PixelBlast Background - hidden on mobile for performance */}
+            <div className="hidden md:block fixed inset-0 -z-10 pointer-events-none opacity-30">
                 <PixelBlast
                     variant="circle"
                     pixelSize={4}
