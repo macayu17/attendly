@@ -164,7 +164,7 @@ export function Dashboard() {
             </div>
 
             {/* Navigation Area - Sticky, not overlapping content */}
-            <div className="sticky top-0 z-50 pt-6 pb-4 relative">
+            <div className="sticky top-0 z-50 pt-4 md:pt-6 pb-2 md:pb-4 relative">
                 <div className="container flex items-center justify-between">
                     <PillNav
                         items={navItems}
@@ -191,7 +191,7 @@ export function Dashboard() {
             </div>
 
             {/* Timetable Section */}
-            <div id="schedule" className="container mb-32 relative z-10">
+            <div id="schedule" className="container mb-24 md:mb-32 relative z-10">
                 <TimetableSection />
             </div>
 
@@ -201,10 +201,10 @@ export function Dashboard() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
-                    className="mb-16"
+                    className="mb-12 md:mb-16"
                 >
-                    <h1 className="text-4xl md:text-5xl font-bold text-white mb-3 tracking-tight">
-                        {greeting}, <span className="text-white/50">{user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Student'}</span>
+                    <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 md:mb-3 tracking-tight leading-tight">
+                        {greeting}, <span className="text-white/50 block md:inline">{user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Student'}</span>
                     </h1>
                     <div className="flex items-center gap-4 text-white/60 mb-2">
                         <p className="text-lg font-medium">{today}</p>
