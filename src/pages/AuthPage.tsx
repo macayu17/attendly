@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from '@/stores/authStore'
-import { Loader2, ArrowRight, GraduationCap } from 'lucide-react'
+import { Loader2, ArrowRight } from 'lucide-react'
 
 export function AuthPage() {
     const [isLogin, setIsLogin] = useState(true)
