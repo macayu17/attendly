@@ -1,0 +1,61 @@
+interface AttendanceRingProps {
+    percentage: number
+    size?: number
+    strokeWidth?: number
+    color?: string
+}
+
+export function AttendanceRing({
+    percentage,
+    size = 80,
+    strokeWidth = 6,
+    color = '#22c55e',
+}: AttendanceRingProps) {
+    const radius = (size - strokeWidth) / 2
+    const circumference = radius * 2 * Math.PI
+    const offset = circumference - (percentage / 100) * circumference
+
+    // Determine color based on percentage
+    const getColor = () => {
+        if (percentage >= 80) return '#22c55e' // green
+        if (percentage >= 70) return '#eab308' // yellow
+        return '#ef4444' // red
+    }
+
+    const strokeColor = color === '#22c55e' ? getColor() : color
+
+    return (
+        <div className="relative inline-flex items-center justify-center">
+            <svg width={size} height={size} className="transform -rotate-90">
+                {/* Background circle */}
+                <circle
+                    cx={size / 2}
+                    cy={size / 2}
+                    r={radius}
+                    stroke="#262626"
+                    strokeWidth={strokeWidth}
+                    fill="none"
+                />
+                {/* Progress circle */}
+                <circle
+                    cx={size / 2}
+                    cy={size / 2}
+                    r={radius}
+                    stroke={strokeColor}
+                    strokeWidth={strokeWidth}
+                    strokeLinecap="round"
+                    fill="none"
+                    strokeDasharray={circumference}
+                    strokeDashoffset={offset}
+                    className="attendance-ring"
+                />
+            </svg>
+            {/* Percentage text */}
+            <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-lg font-semibold font-mono text-white">
+                    {Math.round(percentage)}
+                </span>
+            </div>
+        </div>
+    )
+}
