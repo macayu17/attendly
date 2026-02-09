@@ -12,11 +12,13 @@ import Dock from '@/components/Dock'
 import PillNav from '@/components/PillNav'
 import { TimetableSection } from '@/components/TimetableSection'
 import PixelBlast from '@/components/PixelBlast'
+import { AddClassModal } from '@/components/AddClassModal'
 
 export function Dashboard() {
     const { user, signOut } = useAuthStore()
     const { subjects, loading, fetchSubjects, timetable } = useAttendanceStore()
     const [showAddModal, setShowAddModal] = useState(false)
+    const [showAddClassModal, setShowAddClassModal] = useState(false)
     const [showSettings, setShowSettings] = useState(false)
     const [showHistory, setShowHistory] = useState(false)
 
@@ -192,7 +194,7 @@ export function Dashboard() {
 
             {/* Timetable Section */}
             <div id="schedule" className="container mb-24 md:mb-32 relative z-10">
-                <TimetableSection />
+                <TimetableSection onOpenAddClass={() => setShowAddClassModal(true)} />
             </div>
 
             {/* Hero Section with Welcome */}
@@ -328,6 +330,7 @@ export function Dashboard() {
             <Dock items={dockItems} />
 
             <AddSubjectModal isOpen={showAddModal} onClose={() => setShowAddModal(false)} />
+            <AddClassModal isOpen={showAddClassModal} onClose={() => setShowAddClassModal(false)} />
             <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
             <AttendanceHistoryModal isOpen={showHistory} onClose={() => setShowHistory(false)} />
         </div>

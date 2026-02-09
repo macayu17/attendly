@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Trash2, Clock, Calendar, Check, X, Minus } from 'lucide-react'
 import { useAttendanceStore } from '@/stores/attendanceStore'
-import { AddClassModal } from './AddClassModal'
 import { format, parse } from 'date-fns'
 import { useAuthStore } from '@/stores/authStore'
 
@@ -16,7 +15,11 @@ const DAYS = [
     { value: 0, label: 'Sun', full: 'Sunday' },
 ]
 
-export function TimetableSection() {
+interface TimetableSectionProps {
+    onOpenAddClass: () => void
+}
+
+export function TimetableSection({ onOpenAddClass }: TimetableSectionProps) {
     const {
         subjects,
         timetable,
@@ -33,7 +36,6 @@ export function TimetableSection() {
     const today = new Date().getDay()
     const todayDateString = new Date().toISOString().split('T')[0]
     const [selectedDay, setSelectedDay] = useState(today === 0 ? 1 : today)
-    const [isAddModalOpen, setIsAddModalOpen] = useState(false)
     const [entryFeedback, setEntryFeedback] = useState<Record<string, string>>({})
     const feedbackTimers = useRef<Record<string, number>>({})
 
@@ -111,7 +113,7 @@ export function TimetableSection() {
                     Weekly Schedule
                 </h2>
                 <button
-                    onClick={() => setIsAddModalOpen(true)}
+                    onClick={onOpenAddClass}
                     className="btn btn-primary h-10 px-4 rounded-full text-sm flex items-center gap-2"
                 >
                     <Plus className="w-4 h-4" />
@@ -153,7 +155,7 @@ export function TimetableSection() {
                                 </div>
                                 <p>No classes scheduled for {DAYS.find(d => d.value === selectedDay)?.full}</p>
                                 <button
-                                    onClick={() => setIsAddModalOpen(true)}
+                                    onClick={onOpenAddClass}
                                     className="mt-4 text-indigo-400 hover:text-indigo-300 text-sm font-medium"
                                 >
                                     + Add a class
@@ -255,10 +257,6 @@ export function TimetableSection() {
                 </AnimatePresence>
             </div>
 
-            <AddClassModal
-                isOpen={isAddModalOpen}
-                onClose={() => setIsAddModalOpen(false)}
-            />
         </div>
     )
 }
