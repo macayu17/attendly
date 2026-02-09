@@ -263,7 +263,7 @@ export function TimetableSection({ weekStart, onNextWeek, onPrevWeek, onJumpToTo
                                     )
                                 )
 
-                                return allItems.map((item, index) => {
+                                return allItems.map((item) => {
                                     if (item.type === 'scheduled') {
                                         const entry = item.data as any
                                         const subject = subjects.find(s => s.id === entry.subject_id)

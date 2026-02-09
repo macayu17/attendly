@@ -15,7 +15,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     const { user, signOut, updateProfile, updatePassword: userActionUpdatePassword } = useAuthStore()
     const { subjects, attendanceLogs } = useAttendanceStore()
     const [currentView, setCurrentView] = useState<SettingsView>('main')
-    const [theme, setTheme] = useState<'dark' | 'light' | 'system'>(() => {
+    const [theme] = useState<'dark' | 'light' | 'system'>(() => {
         if (typeof window !== 'undefined') {
             return (localStorage.getItem('theme') as 'dark' | 'light' | 'system') || 'dark'
         }
