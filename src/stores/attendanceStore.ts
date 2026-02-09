@@ -32,8 +32,8 @@ interface AttendanceState {
     addTimetableEntry: (entry: Omit<TimetableEntry, 'id'>) => Promise<void>
     deleteTimetableEntry: (id: string) => Promise<void>
 
-    markAttendance: (subjectId: string, userId: string, status: 'present' | 'absent' | 'cancelled', date?: string, sessionNumber?: number) => Promise<void>
-    deleteAttendanceLog: (logId: string) => Promise<void>
+    markAttendance: (subjectId: string, userId: string, status: 'present' | 'absent' | 'cancelled', date?: string, sessionNumber?: number) => Promise<boolean>
+    deleteAttendanceLog: (logId: string, userId: string) => Promise<boolean>
 
     clearError: () => void
     reset: () => void
@@ -280,14 +280,17 @@ export const useAttendanceStore = create<AttendanceState>()(
                         if (error) throw error
                     }
 
-                    // Refresh subjects to get updated stats
+                    // Refresh subjects/logs to get updated stats
                     await get().fetchSubjects(userId)
+                    await get().fetchAttendanceLogs(userId)
+                    return true
                 } catch (error) {
                     set({ error: (error as Error).message, loading: false })
+                    return false
                 }
             },
 
-            deleteAttendanceLog: async (logId) => {
+            deleteAttendanceLog: async (logId, userId) => {
                 set({ loading: true, error: null })
                 try {
                     const { error } = await supabase
@@ -297,12 +300,13 @@ export const useAttendanceStore = create<AttendanceState>()(
 
                     if (error) throw error
 
-                    set((state) => ({
-                        attendanceLogs: state.attendanceLogs.filter(l => l.id !== logId),
-                        loading: false,
-                    }))
+                    await get().fetchSubjects(userId)
+                    await get().fetchAttendanceLogs(userId)
+                    set({ loading: false })
+                    return true
                 } catch (error) {
                     set({ error: (error as Error).message, loading: false })
+                    return false
                 }
             },
 

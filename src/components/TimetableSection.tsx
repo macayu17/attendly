@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Trash2, Clock, Calendar } from 'lucide-react'
+import { Plus, Trash2, Clock, Calendar, Check, X, Minus } from 'lucide-react'
 import { useAttendanceStore } from '@/stores/attendanceStore'
 import { AddClassModal } from './AddClassModal'
 import { format, parse } from 'date-fns'
+import { useAuthStore } from '@/stores/authStore'
 
 const DAYS = [
     { value: 1, label: 'Mon', full: 'Monday' },
@@ -21,12 +22,20 @@ export function TimetableSection() {
         timetable,
         fetchTimetable,
         deleteTimetableEntry,
+        markAttendance,
+        deleteAttendanceLog,
+        attendanceLogs,
+        loading,
     } = useAttendanceStore()
+    const { user } = useAuthStore()
 
     // Default to current day (or Monday if Sunday)
     const today = new Date().getDay()
+    const todayDateString = new Date().toISOString().split('T')[0]
     const [selectedDay, setSelectedDay] = useState(today === 0 ? 1 : today)
     const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+    const [entryFeedback, setEntryFeedback] = useState<Record<string, string>>({})
+    const feedbackTimers = useRef<Record<string, number>>({})
 
     useEffect(() => {
         if (subjects.length > 0) {
@@ -34,6 +43,14 @@ export function TimetableSection() {
             fetchTimetable(subjectIds)
         }
     }, [subjects, fetchTimetable])
+
+    useEffect(() => {
+        return () => {
+            Object.values(feedbackTimers.current).forEach((timerId) => {
+                window.clearTimeout(timerId)
+            })
+        }
+    }, [])
 
     // Filter and Sort entries for selected day
     const dayEntries = timetable
@@ -55,6 +72,35 @@ export function TimetableSection() {
         if (confirm('Remove this class from schedule?')) {
             await deleteTimetableEntry(id)
         }
+    }
+
+    const flashEntryFeedback = (entryId: string, text: string) => {
+        setEntryFeedback((prev) => ({ ...prev, [entryId]: text }))
+        const existingTimer = feedbackTimers.current[entryId]
+        if (existingTimer) {
+            window.clearTimeout(existingTimer)
+        }
+        feedbackTimers.current[entryId] = window.setTimeout(() => {
+            setEntryFeedback((prev) => {
+                const next = { ...prev }
+                delete next[entryId]
+                return next
+            })
+            delete feedbackTimers.current[entryId]
+        }, 2000)
+    }
+
+    const handleMarkFromSchedule = async (entryId: string, subjectId: string, status: 'present' | 'absent' | 'cancelled', existingLogId?: string, currentStatus?: 'present' | 'absent' | 'cancelled') => {
+        if (!user || loading) return
+        if (existingLogId && currentStatus === status) {
+            const ok = await deleteAttendanceLog(existingLogId, user.id)
+            flashEntryFeedback(entryId, ok ? 'Attendance cleared' : 'Could not update attendance')
+            return
+        }
+
+        const ok = await markAttendance(subjectId, user.id, status)
+        const label = status === 'present' ? 'Present' : status === 'absent' ? 'Absent' : 'Cancelled'
+        flashEntryFeedback(entryId, ok ? `Marked ${label}` : 'Could not mark attendance')
     }
 
     return (
@@ -117,43 +163,90 @@ export function TimetableSection() {
                             dayEntries.map(entry => {
                                 const subject = subjects.find(s => s.id === entry.subject_id)
                                 if (!subject) return null
+                                const existingLog = attendanceLogs.find(
+                                    (log) => log.subject_id === subject.id && log.marked_at === todayDateString
+                                )
+                                const currentStatus = existingLog?.status
 
                                 return (
-                                    <div
-                                        key={entry.id}
-                                        className="group relative flex items-center gap-4 p-4 rounded-2xl bg-[#0F0F11] border border-white/5 hover:border-white/10 transition-colors"
-                                    >
-                                        {/* Time Column */}
-                                        <div className="flex flex-col items-center min-w-[80px] text-center border-r border-white/5 pr-4">
-                                            <span className="text-white font-bold text-lg">{formatTime(entry.start_time)}</span>
-                                            <span className="text-xs text-muted uppercase tracking-wider">{formatTime(entry.end_time)}</span>
-                                        </div>
-
-                                        {/* Subject Info */}
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <div
-                                                    className="w-2 h-2 rounded-full"
-                                                    style={{ background: subject.color_code }}
-                                                />
-                                                <span
-                                                    className="text-xs font-bold px-2 py-0.5 rounded-md uppercase tracking-wider"
-                                                    style={{ background: `${subject.color_code}20`, color: subject.color_code }}
-                                                >
-                                                    {subject.code || 'SUB'}
-                                                </span>
-                                            </div>
-                                            <h3 className="text-white font-medium text-lg leading-tight">{subject.name}</h3>
-                                        </div>
-
-                                        {/* Actions */}
-                                        <button
-                                            onClick={() => handleDelete(entry.id)}
-                                            className="opacity-0 group-hover:opacity-100 p-2 hover:bg-red-500/10 rounded-lg text-muted hover:text-red-400 transition-all"
-                                            title="Remove class"
+                                    <div key={entry.id} className="space-y-1">
+                                        <div
+                                            className="group relative flex items-center gap-4 p-4 rounded-2xl bg-[#0F0F11] border border-white/5 hover:border-white/10 transition-colors"
                                         >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
+                                            {/* Time Column */}
+                                            <div className="flex flex-col items-center min-w-[80px] text-center border-r border-white/5 pr-4">
+                                                <span className="text-white font-bold text-lg">{formatTime(entry.start_time)}</span>
+                                                <span className="text-xs text-muted uppercase tracking-wider">{formatTime(entry.end_time)}</span>
+                                            </div>
+
+                                            {/* Subject Info */}
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <div
+                                                        className="w-2 h-2 rounded-full"
+                                                        style={{ background: subject.color_code }}
+                                                    />
+                                                    <span
+                                                        className="text-xs font-bold px-2 py-0.5 rounded-md uppercase tracking-wider"
+                                                        style={{ background: `${subject.color_code}20`, color: subject.color_code }}
+                                                    >
+                                                        {subject.code || 'SUB'}
+                                                    </span>
+                                                </div>
+                                                <h3 className="text-white font-medium text-lg leading-tight">{subject.name}</h3>
+                                            </div>
+
+                                            {/* Actions */}
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex items-center gap-1">
+                                                    <button
+                                                        onClick={() => handleMarkFromSchedule(entry.id, subject.id, 'present', existingLog?.id, currentStatus)}
+                                                        disabled={loading}
+                                                        className={`p-2 rounded-lg transition-colors ${currentStatus === 'present'
+                                                            ? 'bg-green-500 text-white'
+                                                            : 'bg-green-500/10 text-green-400 hover:bg-green-500/20'
+                                                            }`}
+                                                        title="Mark present (today)"
+                                                    >
+                                                        <Check className="w-4 h-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleMarkFromSchedule(entry.id, subject.id, 'absent', existingLog?.id, currentStatus)}
+                                                        disabled={loading}
+                                                        className={`p-2 rounded-lg transition-colors ${currentStatus === 'absent'
+                                                            ? 'bg-red-500 text-white'
+                                                            : 'bg-red-500/10 text-red-400 hover:bg-red-500/20'
+                                                            }`}
+                                                        title="Mark absent (today)"
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleMarkFromSchedule(entry.id, subject.id, 'cancelled', existingLog?.id, currentStatus)}
+                                                        disabled={loading}
+                                                        className={`p-2 rounded-lg transition-colors ${currentStatus === 'cancelled'
+                                                            ? 'bg-yellow-500 text-white'
+                                                            : 'bg-white/5 text-muted hover:bg-white/10'
+                                                            }`}
+                                                        title="Mark cancelled (today)"
+                                                    >
+                                                        <Minus className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                                <button
+                                                    onClick={() => handleDelete(entry.id)}
+                                                    className="opacity-0 group-hover:opacity-100 p-2 hover:bg-red-500/10 rounded-lg text-muted hover:text-red-400 transition-all"
+                                                    title="Remove class"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                        {entryFeedback[entry.id] && (
+                                            <div className="pt-1 text-xs text-white/50">
+                                                {entryFeedback[entry.id]}
+                                            </div>
+                                        )}
                                     </div>
                                 )
                             })

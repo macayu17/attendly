@@ -6,6 +6,7 @@ import { EditSubjectModal } from './EditSubjectModal'
 import { useAttendanceStore } from '@/stores/attendanceStore'
 import { useAuthStore } from '@/stores/authStore'
 import { calculateBunkBuffer } from '@/hooks/useAttendance'
+import { useMarkFeedback } from '@/hooks/useMarkFeedback'
 
 interface SubjectCardProps {
     subject: {
@@ -26,6 +27,7 @@ export function SubjectCard({ subject, index = 0 }: SubjectCardProps) {
     const { markAttendance, deleteSubject, loading } = useAttendanceStore()
     const { user } = useAuthStore()
     const [showEditModal, setShowEditModal] = useState(false)
+    const { message, flash } = useMarkFeedback()
 
     const total = subject.present + subject.absent
     const bunkBuffer = calculateBunkBuffer(subject.present, total, subject.min_attendance_req)
@@ -33,7 +35,9 @@ export function SubjectCard({ subject, index = 0 }: SubjectCardProps) {
 
     const handleMark = async (status: 'present' | 'absent' | 'cancelled') => {
         if (!user || loading) return
-        await markAttendance(subject.id, user.id, status)
+        const ok = await markAttendance(subject.id, user.id, status)
+        const label = status === 'present' ? 'Present' : status === 'absent' ? 'Absent' : 'Cancelled'
+        flash(ok ? `Marked ${label}` : 'Could not mark attendance')
     }
 
     const handleDelete = async () => {
@@ -133,6 +137,11 @@ export function SubjectCard({ subject, index = 0 }: SubjectCardProps) {
                         <Minus className="w-4 h-4" />
                     </button>
                 </div>
+                {message && (
+                    <div className="mt-3 text-xs text-white/60">
+                        {message}
+                    </div>
+                )}
             </motion.div>
 
             <EditSubjectModal

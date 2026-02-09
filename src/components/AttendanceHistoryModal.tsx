@@ -4,6 +4,7 @@ import { X, ChevronLeft, ChevronRight, Check, XIcon, Slash, Plus, Clock } from '
 import { useAttendanceStore } from '@/stores/attendanceStore'
 import { useAuthStore } from '@/stores/authStore'
 import { format, addDays, subDays, getDay } from 'date-fns'
+import { useMarkFeedback } from '@/hooks/useMarkFeedback'
 
 interface AttendanceHistoryModalProps {
     isOpen: boolean
@@ -15,6 +16,7 @@ export function AttendanceHistoryModal({ isOpen, onClose }: AttendanceHistoryMod
     const [showAllSubjects, setShowAllSubjects] = useState(false)
     const { subjects, attendanceLogs, timetable, markAttendance, deleteAttendanceLog, loading } = useAttendanceStore()
     const { user } = useAuthStore()
+    const { message, flash } = useMarkFeedback()
 
     const dateString = format(selectedDate, 'yyyy-MM-dd')
     const displayDate = format(selectedDate, 'EEEE, MMMM d, yyyy')
@@ -67,9 +69,12 @@ export function AttendanceHistoryModal({ isOpen, onClose }: AttendanceHistoryMod
 
         // If clicking same status, clear it (unselect)
         if (newStatus === null && existingLogId) {
-            await deleteAttendanceLog(existingLogId)
+            const ok = await deleteAttendanceLog(existingLogId, user.id)
+            flash(ok ? 'Attendance cleared' : 'Could not update attendance')
         } else if (newStatus) {
-            await markAttendance(subjectId, user.id, newStatus, dateString, sessionNumber)
+            const ok = await markAttendance(subjectId, user.id, newStatus, dateString, sessionNumber)
+            const label = newStatus === 'present' ? 'Present' : newStatus === 'absent' ? 'Absent' : 'Cancelled'
+            flash(ok ? `Marked ${label}` : 'Could not mark attendance')
         }
     }
 
@@ -81,7 +86,8 @@ export function AttendanceHistoryModal({ isOpen, onClose }: AttendanceHistoryMod
         const nextSession = subjectLogs.length > 0
             ? Math.max(...subjectLogs.map(l => l.session_number || 1)) + 1
             : 1
-        await markAttendance(subjectId, user.id, 'present', dateString, nextSession)
+        const ok = await markAttendance(subjectId, user.id, 'present', dateString, nextSession)
+        flash(ok ? 'Added session (Present)' : 'Could not add session')
     }
 
     const goToPreviousDay = () => setSelectedDate(prev => subDays(prev, 1))
@@ -118,12 +124,19 @@ export function AttendanceHistoryModal({ isOpen, onClose }: AttendanceHistoryMod
                             {/* Header */}
                             <div className="flex items-center justify-between mb-6">
                                 <h2 className="text-xl font-bold text-white">📅 Attendance History</h2>
-                                <button
-                                    onClick={onClose}
-                                    className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
-                                >
-                                    <X className="w-5 h-5 text-white/60" />
-                                </button>
+                                <div className="flex items-center gap-3">
+                                    {message && (
+                                        <span className="text-xs text-white/60 bg-white/5 px-2 py-1 rounded-lg">
+                                            {message}
+                                        </span>
+                                    )}
+                                    <button
+                                        onClick={onClose}
+                                        className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
+                                    >
+                                        <X className="w-5 h-5 text-white/60" />
+                                    </button>
+                                </div>
                             </div>
 
                             {/* Date Navigator */}
