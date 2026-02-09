@@ -1,8 +1,9 @@
 import { useEffect, useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LogOut, Plus, RefreshCw, BookOpen, Home, TrendingUp, Calendar, Zap, History } from 'lucide-react'
+import { Plus, RefreshCw, BookOpen, Home, TrendingUp, Calendar, Zap, History } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useAttendanceStore } from '@/stores/attendanceStore'
+import { startOfWeek, addDays, subDays } from 'date-fns'
 import { SubjectCard } from '@/components/SubjectCard'
 import { AddSubjectModal } from '@/components/AddSubjectModal'
 import { SettingsModal } from '@/components/SettingsModal'
@@ -13,6 +14,8 @@ import PillNav from '@/components/PillNav'
 import { TimetableSection } from '@/components/TimetableSection'
 import PixelBlast from '@/components/PixelBlast'
 import { AddClassModal } from '@/components/AddClassModal'
+import { HolidaysModal } from '@/components/HolidaysModal'
+import { PartyPopper } from 'lucide-react'
 
 export function Dashboard() {
     const { user, signOut } = useAuthStore()
@@ -21,6 +24,7 @@ export function Dashboard() {
     const [showAddClassModal, setShowAddClassModal] = useState(false)
     const [showSettings, setShowSettings] = useState(false)
     const [showHistory, setShowHistory] = useState(false)
+    const [showHolidays, setShowHolidays] = useState(false)
 
     useEffect(() => {
         if (user) fetchSubjects(user.id)
@@ -108,12 +112,24 @@ export function Dashboard() {
         return { subject, timeDisplay }
     }, [timetable, subjects, currentTime])
 
+    // Week Navigation State
+    const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }))
+
+    const handleNextWeek = () => setWeekStart(prev => addDays(prev, 7))
+    const handlePrevWeek = () => setWeekStart(prev => subDays(prev, 7))
+    const handleJumpToToday = () => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))
+
     // Memoize nav items to prevent re-renders causing PillNav glitches
     const dockItems = useMemo(() => [
         {
             icon: <Home className="w-5 h-5 text-white" />,
             label: 'Home',
             onClick: () => window.scrollTo({ top: 0, behavior: 'smooth' })
+        },
+        {
+            icon: <BookOpen className="w-5 h-5 text-white" />,
+            label: 'Add Class',
+            onClick: () => setShowAddClassModal(true)
         },
         {
             icon: <Plus className="w-5 h-5 text-white" />,
@@ -136,10 +152,10 @@ export function Dashboard() {
             onClick: () => setShowSettings(true)
         },
         {
-            icon: <LogOut className="w-5 h-5 text-red-400" />,
-            label: 'Sign Out',
-            onClick: signOut
-        }
+            icon: <PartyPopper className="w-5 h-5 text-orange-400" />,
+            label: 'Holidays',
+            onClick: () => setShowHolidays(true)
+        },
     ], [user, loading, fetchSubjects, signOut])
 
     const navItems = useMemo(() => [
@@ -176,6 +192,7 @@ export function Dashboard() {
                         pillColor="#0A0A0A"
                         pillTextColor="#888"
                         hoveredPillTextColor="#fff"
+                        navHeight="54px"
                     />
 
                     <div className="hidden md:block">
@@ -193,8 +210,13 @@ export function Dashboard() {
             </div>
 
             {/* Timetable Section */}
-            <div id="schedule" className="container mb-24 md:mb-32 relative z-10">
-                <TimetableSection onOpenAddClass={() => setShowAddClassModal(true)} />
+            <div id="schedule" className="container mb-64 md:mb-96 relative z-10">
+                <TimetableSection
+                    weekStart={weekStart}
+                    onNextWeek={handleNextWeek}
+                    onPrevWeek={handlePrevWeek}
+                    onJumpToToday={handleJumpToToday}
+                />
             </div>
 
             {/* Hero Section with Welcome */}
@@ -203,7 +225,7 @@ export function Dashboard() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
-                    className="mb-12 md:mb-16"
+                    className="mb-6 md:mb-8"
                 >
                     <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 md:mb-3 tracking-tight leading-tight">
                         {greeting}, <span className="text-white/50 block md:inline">{user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Student'}</span>
@@ -221,7 +243,7 @@ export function Dashboard() {
                     <p className="text-muted text-lg">Track your attendance and BUNK smartly.</p>                </motion.div>
 
                 {/* Stats Row */}
-                <div id="overview" className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+                <div id="overview" className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
                     {/* Main Stat Card */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -281,8 +303,8 @@ export function Dashboard() {
                             <span className="text-xs text-muted font-medium uppercase tracking-wider">Attended</span>
                         </div>
                         <div>
-                            <span className="text-6xl font-bold text-white tracking-tighter">{totalClasses}</span>
-                            <p className="text-muted text-sm mt-2">total classes tracked</p>
+                            <span className="text-6xl font-bold text-white tracking-tighter">{totalPresent}</span>
+                            <p className="text-muted text-sm mt-2">classes attended</p>
                         </div>
                     </motion.div>
                 </div>
@@ -333,6 +355,7 @@ export function Dashboard() {
             <AddClassModal isOpen={showAddClassModal} onClose={() => setShowAddClassModal(false)} />
             <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
             <AttendanceHistoryModal isOpen={showHistory} onClose={() => setShowHistory(false)} />
+            <HolidaysModal isOpen={showHolidays} onClose={() => setShowHolidays(false)} />
         </div>
     )
 }

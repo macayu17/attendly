@@ -14,6 +14,7 @@ interface AuthState {
     signIn: (email: string, password: string) => Promise<void>
     signOut: () => Promise<void>
     updateProfile: (updates: { data: { full_name?: string } }) => Promise<void>
+    updatePassword: (password: string) => Promise<void>
     resetPassword: (email: string) => Promise<void>
     clearError: () => void
     initialize: () => Promise<void>
@@ -128,6 +129,20 @@ export const useAuthStore = create<AuthState>()(
                 }
             },
 
+            updatePassword: async (password: string) => {
+                set({ loading: true, error: null })
+                try {
+                    const { error } = await supabase.auth.updateUser({ password })
+                    if (error) throw error
+                    set({ loading: false })
+                } catch (error) {
+                    set({
+                        loading: false,
+                        error: error instanceof Error ? error.message : 'Update password failed',
+                    })
+                    throw error
+                }
+            },
             resetPassword: async (email) => {
                 set({ loading: true, error: null })
                 try {

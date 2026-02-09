@@ -19,6 +19,7 @@ export interface PillNavProps {
     baseColor?: string;
     pillColor?: string;
     hoveredPillTextColor?: string;
+    navHeight?: string;
     pillTextColor?: string;
     onMobileMenuClick?: () => void;
     initialLoadAnimation?: boolean;
@@ -35,6 +36,7 @@ const _PillNav: React.FC<PillNavProps> = ({
     pillColor = '#1a1a1a',
     hoveredPillTextColor = '#fff',
     pillTextColor = '#888',
+    navHeight = '42px',
     initialLoadAnimation = true
 }) => {
     const resolvedPillTextColor = pillTextColor ?? baseColor;
@@ -43,7 +45,6 @@ const _PillNav: React.FC<PillNavProps> = ({
     const activeTweenRefs = useRef<Array<gsap.core.Tween | null>>([]);
     const logoImgRef = useRef<HTMLImageElement | null>(null);
     const logoTweenRef = useRef<gsap.core.Tween | null>(null);
-    // Removed unused mobile menu refs
     const navItemsRef = useRef<HTMLDivElement | null>(null);
     const logoRef = useRef<HTMLAnchorElement | HTMLElement | null>(null);
 
@@ -167,14 +168,12 @@ const _PillNav: React.FC<PillNavProps> = ({
         });
     };
 
-
-
     const cssVars = {
         ['--base']: baseColor,
         ['--pill-bg']: pillColor,
         ['--hover-text']: hoveredPillTextColor,
         ['--pill-text']: resolvedPillTextColor,
-        ['--nav-h']: '42px',
+        ['--nav-h']: navHeight,
         ['--logo']: '36px',
         ['--pill-pad-x']: '18px',
         ['--pill-gap']: '3px'

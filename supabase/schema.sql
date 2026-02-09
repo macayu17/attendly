@@ -125,3 +125,36 @@ CREATE INDEX IF NOT EXISTS idx_timetable_subject_id ON timetable(subject_id);
 CREATE INDEX IF NOT EXISTS idx_attendance_logs_user_id ON attendance_logs(user_id);
 CREATE INDEX IF NOT EXISTS idx_attendance_logs_subject_id ON attendance_logs(subject_id);
 CREATE INDEX IF NOT EXISTS idx_attendance_logs_marked_at ON attendance_logs(marked_at);
+-- =========================================
+-- HOLIDAYS TABLE
+-- =========================================
+CREATE TABLE IF NOT EXISTS holidays (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  name TEXT NOT NULL,
+  date DATE NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, date)
+);
+
+-- HOLIDAYS Policies
+ALTER TABLE holidays ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own holidays"
+  ON holidays FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can create their own holidays"
+  ON holidays FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own holidays"
+  ON holidays FOR UPDATE
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own holidays"
+  ON holidays FOR DELETE
+  USING (auth.uid() = user_id);
+
+CREATE INDEX IF NOT EXISTS idx_holidays_user_id ON holidays(user_id);
+CREATE INDEX IF NOT EXISTS idx_holidays_date ON holidays(date);

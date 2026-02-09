@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, User, Bell, Palette, Shield, LogOut, ChevronRight, ChevronLeft, Moon, Sun, Check } from 'lucide-react'
+import { X, User, Bell, Palette, Shield, LogOut, ChevronRight, ChevronLeft } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useAttendanceStore } from '@/stores/attendanceStore'
 
@@ -12,7 +12,7 @@ interface SettingsModalProps {
 type SettingsView = 'main' | 'account' | 'notifications' | 'appearance' | 'privacy'
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
-    const { user, signOut, resetPassword, updateProfile } = useAuthStore()
+    const { user, signOut, updateProfile, updatePassword: userActionUpdatePassword } = useAuthStore()
     const { subjects, attendanceLogs } = useAttendanceStore()
     const [currentView, setCurrentView] = useState<SettingsView>('main')
     const [theme, setTheme] = useState<'dark' | 'light' | 'system'>(() => {
@@ -72,14 +72,17 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         onClose()
     }
 
-    const handleResetPassword = async () => {
-        if (!user?.email) return
+    const [newPassword, setNewPassword] = useState('')
+
+    const handleUpdatePassword = async () => {
+        if (!newPassword) return
         setLoadingAction('password')
         try {
-            await resetPassword(user.email)
-            setActionMessage({ type: 'success', text: 'Reset link sent to your email' })
+            await userActionUpdatePassword(newPassword)
+            setActionMessage({ type: 'success', text: 'Password updated successfully' })
+            setNewPassword('')
         } catch (error) {
-            setActionMessage({ type: 'error', text: 'Failed to send reset link' })
+            setActionMessage({ type: 'error', text: 'Failed to update password' })
         } finally {
             setLoadingAction(null)
         }
@@ -127,24 +130,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         // For now, just sign out to simulate 'leaving'.
         await signOut()
         onClose()
-    }
-
-    const toggleTheme = (newTheme: typeof theme) => {
-        setTheme(newTheme)
-        if (newTheme === 'dark') {
-            document.documentElement.classList.add('dark')
-            document.documentElement.classList.remove('light')
-        } else if (newTheme === 'light') {
-            document.documentElement.classList.remove('dark')
-            document.documentElement.classList.add('light')
-        } else {
-            // System
-            if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                document.documentElement.classList.add('dark')
-            } else {
-                document.documentElement.classList.remove('dark')
-            }
-        }
     }
 
     const settingsItems = [
@@ -279,12 +264,25 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     <p className="text-white font-medium">75%</p>
                 </div>
 
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                    <label className="block text-white/40 text-sm mb-2">Change Password</label>
+                    <div className="flex gap-2">
+                        <input
+                            type="password"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            className="w-full bg-transparent text-white font-medium focus:outline-none placeholder-white/20"
+                            placeholder="New password"
+                        />
+                    </div>
+                </div>
+
                 <button
-                    onClick={handleResetPassword}
-                    disabled={loadingAction === 'password'}
-                    className="w-full p-4 rounded-2xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 text-indigo-400 font-medium transition-all"
+                    onClick={handleUpdatePassword}
+                    disabled={loadingAction === 'password' || !newPassword}
+                    className="w-full p-4 rounded-2xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 text-indigo-400 font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    {loadingAction === 'password' ? 'Sending...' : 'Change Password'}
+                    {loadingAction === 'password' ? 'Updating...' : 'Update Password'}
                 </button>
 
                 {actionMessage && (
@@ -358,34 +356,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         <>
             <div className="space-y-4">
                 <p className="text-white/40 text-sm">Theme</p>
-                <div className="grid grid-cols-3 gap-3">
-                    {[
-                        { id: 'dark', label: 'Dark', icon: Moon },
-                        { id: 'light', label: 'Light', icon: Sun },
-                        { id: 'system', label: 'System', icon: Palette },
-                    ].map((t) => (
-                        <button
-                            key={t.id}
-                            onClick={() => toggleTheme(t.id as typeof theme)}
-                            className={`p-4 rounded-2xl border transition-all flex flex-col items-center gap-2 ${theme === t.id
-                                ? 'bg-white/10 border-white/20'
-                                : 'bg-white/5 border-white/5 hover:border-white/10'
-                                }`}
-                        >
-                            <t.icon className={`w-6 h-6 ${theme === t.id ? 'text-white' : 'text-white/40'}`} />
-                            <span className={`text-sm font-medium ${theme === t.id ? 'text-white' : 'text-white/40'}`}>
-                                {t.label}
-                            </span>
-                            {theme === t.id && (
-                                <Check className="w-4 h-4 text-green-400" />
-                            )}
-                        </button>
-                    ))}
-                </div>
-
-                <div className="mt-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20">
-                    <p className="text-amber-400 text-sm">
-                        Light theme coming soon! Dark mode is currently the only available option.
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                    <p className="text-white font-medium mb-1">Dark Mode</p>
+                    <p className="text-white/40 text-sm">
+                        Finding light mode? For realll bruhh!! Who uses light mode now??
                     </p>
                 </div>
             </div>

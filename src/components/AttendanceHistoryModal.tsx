@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, ChevronLeft, ChevronRight, Check, XIcon, Slash, Plus, Clock } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, Check, XIcon, Slash, Plus, Clock, Calendar } from 'lucide-react'
 import { useAttendanceStore } from '@/stores/attendanceStore'
 import { useAuthStore } from '@/stores/authStore'
 import { format, addDays, subDays, getDay } from 'date-fns'
@@ -90,9 +90,20 @@ export function AttendanceHistoryModal({ isOpen, onClose }: AttendanceHistoryMod
         flash(ok ? 'Added session (Present)' : 'Could not add session')
     }
 
-    const goToPreviousDay = () => setSelectedDate(prev => subDays(prev, 1))
-    const goToNextDay = () => setSelectedDate(prev => addDays(prev, 1))
-    const goToToday = () => setSelectedDate(new Date())
+    const goToPreviousDay = () => setSelectedDate(prev => {
+        const newDate = subDays(prev, 1)
+        return getDay(newDate) === 0 ? subDays(newDate, 1) : newDate
+    })
+
+    const goToNextDay = () => setSelectedDate(prev => {
+        const newDate = addDays(prev, 1)
+        return getDay(newDate) === 0 ? addDays(newDate, 1) : newDate
+    })
+
+    const goToToday = () => {
+        const today = new Date()
+        setSelectedDate(getDay(today) === 0 ? addDays(today, 1) : today)
+    }
 
     const isToday = format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
 
@@ -148,7 +159,26 @@ export function AttendanceHistoryModal({ isOpen, onClose }: AttendanceHistoryMod
                                     <ChevronLeft className="w-5 h-5 text-white" />
                                 </button>
                                 <div className="text-center">
-                                    <p className="text-white font-semibold">{displayDate}</p>
+                                    <div className="relative group">
+                                        <p className="text-white font-semibold cursor-pointer flex items-center justify-center gap-2">
+                                            {displayDate}
+                                            <Calendar className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-white/60" />
+                                        </p>
+                                        <input
+                                            type="date"
+                                            value={dateString}
+                                            onChange={(e) => {
+                                                if (e.target.value) {
+
+                                                    const [y, m, day] = e.target.value.split('-').map(Number)
+                                                    const newDate = new Date(y, m - 1, day)
+
+                                                    setSelectedDate(getDay(newDate) === 0 ? addDays(newDate, 1) : newDate)
+                                                }
+                                            }}
+                                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                        />
+                                    </div>
                                     {!isToday && (
                                         <button
                                             onClick={goToToday}
@@ -272,8 +302,8 @@ export function AttendanceHistoryModal({ isOpen, onClose }: AttendanceHistoryMod
                                                                     )}
                                                                     disabled={loading}
                                                                     className={`w-7 h-7 rounded flex items-center justify-center transition-all ${session.status === 'present'
-                                                                            ? 'bg-green-500 text-white'
-                                                                            : 'bg-white/5 text-white/40 hover:bg-green-500/20 hover:text-green-400'
+                                                                        ? 'bg-green-500 text-white'
+                                                                        : 'bg-white/5 text-white/40 hover:bg-green-500/20 hover:text-green-400'
                                                                         }`}
                                                                 >
                                                                     <Check className="w-3 h-3" />
@@ -287,8 +317,8 @@ export function AttendanceHistoryModal({ isOpen, onClose }: AttendanceHistoryMod
                                                                     )}
                                                                     disabled={loading}
                                                                     className={`w-7 h-7 rounded flex items-center justify-center transition-all ${session.status === 'absent'
-                                                                            ? 'bg-red-500 text-white'
-                                                                            : 'bg-white/5 text-white/40 hover:bg-red-500/20 hover:text-red-400'
+                                                                        ? 'bg-red-500 text-white'
+                                                                        : 'bg-white/5 text-white/40 hover:bg-red-500/20 hover:text-red-400'
                                                                         }`}
                                                                 >
                                                                     <XIcon className="w-3 h-3" />
@@ -302,8 +332,8 @@ export function AttendanceHistoryModal({ isOpen, onClose }: AttendanceHistoryMod
                                                                     )}
                                                                     disabled={loading}
                                                                     className={`w-7 h-7 rounded flex items-center justify-center transition-all ${session.status === 'cancelled'
-                                                                            ? 'bg-yellow-500 text-white'
-                                                                            : 'bg-white/5 text-white/40 hover:bg-yellow-500/20 hover:text-yellow-400'
+                                                                        ? 'bg-yellow-500 text-white'
+                                                                        : 'bg-white/5 text-white/40 hover:bg-yellow-500/20 hover:text-yellow-400'
                                                                         }`}
                                                                 >
                                                                     <Slash className="w-3 h-3" />

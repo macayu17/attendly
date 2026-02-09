@@ -90,6 +90,29 @@ export interface Database {
                     session_number?: number
                 }
             }
+            holidays: {
+                Row: {
+                    id: string
+                    user_id: string
+                    name: string
+                    date: string
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    user_id: string
+                    name: string
+                    date: string
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    user_id?: string
+                    name?: string
+                    date?: string
+                    created_at?: string
+                }
+            }
         }
         Views: Record<string, never>
         Functions: Record<string, never>
@@ -101,3 +124,4 @@ export interface Database {
 export type Subject = Database['public']['Tables']['subjects']['Row']
 export type TimetableEntry = Database['public']['Tables']['timetable']['Row']
 export type AttendanceLog = Database['public']['Tables']['attendance_logs']['Row']
+export type Holiday = Database['public']['Tables']['holidays']['Row']
