@@ -48,75 +48,6 @@ CREATE TABLE IF NOT EXISTS attendance_logs (
 -- ROW LEVEL SECURITY (RLS) POLICIES
 -- =========================================
 
--- Enable RLS on all tables
-ALTER TABLE subjects ENABLE ROW LEVEL SECURITY;
-ALTER TABLE timetable ENABLE ROW LEVEL SECURITY;
-ALTER TABLE attendance_logs ENABLE ROW LEVEL SECURITY;
-
--- SUBJECTS Policies
-CREATE POLICY "Users can view their own subjects"
-  ON subjects FOR SELECT
-  USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can create their own subjects"
-  ON subjects FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can update their own subjects"
-  ON subjects FOR UPDATE
-  USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can delete their own subjects"
-  ON subjects FOR DELETE
-  USING (auth.uid() = user_id);
-
--- TIMETABLE Policies (access through subject ownership)
-CREATE POLICY "Users can view timetable for their subjects"
-  ON timetable FOR SELECT
-  USING (EXISTS (
-    SELECT 1 FROM subjects WHERE subjects.id = timetable.subject_id AND subjects.user_id = auth.uid()
-  ));
-
-CREATE POLICY "Users can create timetable for their subjects"
-  ON timetable FOR INSERT
-  WITH CHECK (EXISTS (
-    SELECT 1 FROM subjects WHERE subjects.id = timetable.subject_id AND subjects.user_id = auth.uid()
-  ));
-
-CREATE POLICY "Users can update timetable for their subjects"
-  ON timetable FOR UPDATE
-  USING (EXISTS (
-    SELECT 1 FROM subjects WHERE subjects.id = timetable.subject_id AND subjects.user_id = auth.uid()
-  ));
-
-CREATE POLICY "Users can delete timetable for their subjects"
-  ON timetable FOR DELETE
-  USING (EXISTS (
-    SELECT 1 FROM subjects WHERE subjects.id = timetable.subject_id AND subjects.user_id = auth.uid()
-  ));
-
--- ATTENDANCE LOGS Policies
-CREATE POLICY "Users can view their own attendance logs"
-  ON attendance_logs FOR SELECT
-  USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can create their own attendance logs"
-  ON attendance_logs FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can update their own attendance logs"
-  ON attendance_logs FOR UPDATE
-  USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can delete their own attendance logs"
-  ON attendance_logs FOR DELETE
-  USING (auth.uid() = user_id);
-
--- =========================================
--- ENABLE REALTIME FOR ATTENDANCE LOGS
--- =========================================
-ALTER PUBLICATION supabase_realtime ADD TABLE attendance_logs;
-
 -- =========================================
 -- INDEXES FOR PERFORMANCE
 -- =========================================
@@ -142,19 +73,19 @@ ALTER TABLE holidays ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Users can view their own holidays"
   ON holidays FOR SELECT
-  USING (auth.uid() = user_id);
+  USING ((select auth.uid()) = user_id);
 
 CREATE POLICY "Users can create their own holidays"
   ON holidays FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+  WITH CHECK ((select auth.uid()) = user_id);
 
 CREATE POLICY "Users can update their own holidays"
   ON holidays FOR UPDATE
-  USING (auth.uid() = user_id);
+  USING ((select auth.uid()) = user_id);
 
 CREATE POLICY "Users can delete their own holidays"
   ON holidays FOR DELETE
-  USING (auth.uid() = user_id);
+  USING ((select auth.uid()) = user_id);
 
 CREATE INDEX IF NOT EXISTS idx_holidays_user_id ON holidays(user_id);
 CREATE INDEX IF NOT EXISTS idx_holidays_date ON holidays(date);
