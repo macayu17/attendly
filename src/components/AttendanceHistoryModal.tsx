@@ -53,23 +53,49 @@ export function AttendanceHistoryModal({ isOpen, onClose }: AttendanceHistoryMod
             // Get scheduled times for this subject today
             const scheduledTimes = timetable
                 .filter(t => t.subject_id === subject.id && t.day_of_week === dayOfWeek)
+                .sort((a, b) => a.start_time.localeCompare(b.start_time))
                 .map(t => t.start_time.slice(0, 5))
+
+            // Create combined sessions list (logs + scheduled placeholders)
+            const maxSessionNum = Math.max(
+                logs.length > 0 ? Math.max(...logs.map(l => l.session_number || 1)) : 0,
+                scheduledTimes.length
+            )
+
+            const sessions = []
+            for (let i = 1; i <= maxSessionNum; i++) {
+                const existingLog = logs.find(l => (l.session_number || 1) === i)
+                if (existingLog) {
+                    sessions.push(existingLog)
+                } else if (i <= scheduledTimes.length) {
+                    // Create virtual session for scheduled time
+                    sessions.push({
+                        id: `virtual-${subject.id}-${i}`,
+                        subject_id: subject.id,
+                        user_id: user?.id || '',
+                        status: null, // No status yet
+                        marked_at: dateString,
+                        session_number: i,
+                        created_at: new Date().toISOString()
+                    })
+                }
+            }
 
             return {
                 subject,
-                sessions: logs.length > 0 ? logs : [],
+                sessions,
                 scheduledTimes,
                 isScheduled: scheduledSubjectIds.includes(subject.id)
             }
         })
-    }, [subjectsToShow, attendanceLogs, dateString, timetable, dayOfWeek, scheduledSubjectIds])
+    }, [subjectsToShow, attendanceLogs, dateString, timetable, dayOfWeek, scheduledSubjectIds, user])
 
     const handleStatusChange = async (subjectId: string, sessionNumber: number, newStatus: 'present' | 'absent' | 'cancelled' | null, existingLogId?: string) => {
         if (!user) return
 
         // If clicking same status, clear it (unselect)
         if (newStatus === null && existingLogId) {
-            const ok = await deleteAttendanceLog(existingLogId, user.id)
+            const ok = await deleteAttendanceLog(existingLogId)
             flash(ok ? 'Attendance cleared' : 'Could not update attendance')
         } else if (newStatus) {
             const ok = await markAttendance(subjectId, user.id, newStatus, dateString, sessionNumber)
@@ -286,19 +312,26 @@ export function AttendanceHistoryModal({ isOpen, onClose }: AttendanceHistoryMod
                                                 <div className="space-y-1">
                                                     {sessions.map((session) => (
                                                         <div
-                                                            key={session.id}
+                                                            key={session.id || `session-${session.session_number}`}
                                                             className="flex items-center justify-between pl-6 py-2 rounded-xl bg-white/5"
                                                         >
-                                                            <span className="text-sm text-white/50">
-                                                                Session {session.session_number || 1}
-                                                            </span>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-sm text-white/50">
+                                                                    Session {session.session_number || 1}
+                                                                </span>
+                                                                {session.status === null && scheduledTimes[session.session_number! - 1] && (
+                                                                    <span className="text-xs text-white/30">
+                                                                        {scheduledTimes[session.session_number! - 1]}
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                             <div className="flex items-center gap-1">
                                                                 <button
                                                                     onClick={() => handleStatusChange(
                                                                         subject.id,
                                                                         session.session_number || 1,
                                                                         session.status === 'present' ? null : 'present',
-                                                                        session.status === 'present' ? session.id : undefined
+                                                                        session.id.startsWith('virtual') ? undefined : session.id
                                                                     )}
                                                                     disabled={loading}
                                                                     className={`w-7 h-7 rounded flex items-center justify-center transition-all ${session.status === 'present'
@@ -313,7 +346,7 @@ export function AttendanceHistoryModal({ isOpen, onClose }: AttendanceHistoryMod
                                                                         subject.id,
                                                                         session.session_number || 1,
                                                                         session.status === 'absent' ? null : 'absent',
-                                                                        session.status === 'absent' ? session.id : undefined
+                                                                        session.id.startsWith('virtual') ? undefined : session.id
                                                                     )}
                                                                     disabled={loading}
                                                                     className={`w-7 h-7 rounded flex items-center justify-center transition-all ${session.status === 'absent'
@@ -328,7 +361,7 @@ export function AttendanceHistoryModal({ isOpen, onClose }: AttendanceHistoryMod
                                                                         subject.id,
                                                                         session.session_number || 1,
                                                                         session.status === 'cancelled' ? null : 'cancelled',
-                                                                        session.status === 'cancelled' ? session.id : undefined
+                                                                        session.id.startsWith('virtual') ? undefined : session.id
                                                                     )}
                                                                     disabled={loading}
                                                                     className={`w-7 h-7 rounded flex items-center justify-center transition-all ${session.status === 'cancelled'

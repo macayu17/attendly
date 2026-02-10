@@ -101,7 +101,7 @@ export function TimetableSection({ weekStart, onNextWeek, onPrevWeek, onJumpToTo
     const handleMarkFromSchedule = async (entryId: string, subjectId: string, status: 'present' | 'absent' | 'cancelled', existingLogId?: string, currentStatus?: 'present' | 'absent' | 'cancelled', dateStr?: string) => {
         if (!user || loading) return
         if (existingLogId && currentStatus === status) {
-            const ok = await deleteAttendanceLog(existingLogId, user.id)
+            const ok = await deleteAttendanceLog(existingLogId)
             flashEntryFeedback(entryId, ok ? 'Attendance cleared' : 'Could not update attendance')
             return
         }
@@ -428,7 +428,7 @@ export function TimetableSection({ weekStart, onNextWeek, onPrevWeek, onJumpToTo
                                                     <button
                                                         onClick={async () => {
                                                             if (confirm('Remove this extra class log?')) {
-                                                                await deleteAttendanceLog(log.id, user!.id)
+                                                                await deleteAttendanceLog(log.id)
                                                             }
                                                         }}
                                                         className="p-2 hover:bg-white/10 rounded-lg text-muted hover:text-white transition-all"

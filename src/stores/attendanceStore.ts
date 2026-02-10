@@ -38,7 +38,7 @@ interface AttendanceState {
     deleteHoliday: (id: string) => Promise<void>
 
     markAttendance: (subjectId: string, userId: string, status: 'present' | 'absent' | 'cancelled', date?: string, sessionNumber?: number) => Promise<boolean>
-    deleteAttendanceLog: (logId: string, userId: string) => Promise<boolean>
+    deleteAttendanceLog: (logId: string) => Promise<boolean>
 
     clearError: () => void
     reset: () => void
@@ -304,14 +304,15 @@ export const useAttendanceStore = create<AttendanceState>()(
             },
 
             markAttendance: async (subjectId, userId, status, date, sessionNumber = 1) => {
-                set({ loading: true, error: null })
                 const markedAt = date || new Date().toISOString().split('T')[0]
 
                 try {
+                    let updatedLog: AttendanceLog
+
                     // Check if already marked for this date AND session
                     const { data: existing } = await supabase
                         .from('attendance_logs')
-                        .select('id')
+                        .select('*')
                         .eq('subject_id', subjectId)
                         .eq('marked_at', markedAt)
                         .eq('session_number', sessionNumber)
@@ -319,15 +320,18 @@ export const useAttendanceStore = create<AttendanceState>()(
 
                     if (existing) {
                         // Update existing
-                        const { error } = await supabase
+                        const { data, error } = await supabase
                             .from('attendance_logs')
                             .update({ status })
                             .eq('id', existing.id)
+                            .select()
+                            .single()
 
                         if (error) throw error
+                        updatedLog = data
                     } else {
                         // Insert new
-                        const { error } = await supabase
+                        const { data, error } = await supabase
                             .from('attendance_logs')
                             .insert({
                                 subject_id: subjectId,
@@ -336,13 +340,41 @@ export const useAttendanceStore = create<AttendanceState>()(
                                 marked_at: markedAt,
                                 session_number: sessionNumber,
                             })
+                            .select()
+                            .single()
 
                         if (error) throw error
+                        updatedLog = data
                     }
 
-                    // Refresh subjects/logs to get updated stats
-                    await get().fetchSubjects(userId)
-                    await get().fetchAttendanceLogs(userId)
+                    // Update local state directly without refetching
+                    set((state) => {
+                        // 1. Update attendanceLogs
+                        const newLogs = existing
+                            ? state.attendanceLogs.map(l => l.id === existing.id ? updatedLog : l)
+                            : [...state.attendanceLogs, updatedLog]
+
+                        // 2. Update subject stats
+                        const subjectLogs = newLogs.filter(l => l.subject_id === subjectId)
+                        const present = subjectLogs.filter(l => l.status === 'present').length
+                        const absent = subjectLogs.filter(l => l.status === 'absent').length
+                        const cancelled = subjectLogs.filter(l => l.status === 'cancelled').length
+                        const total = present + absent
+                        const percentage = total > 0 ? (present / total) * 100 : 0
+
+                        const newSubjects = state.subjects.map(s =>
+                            s.id === subjectId
+                                ? { ...s, present, absent, cancelled, percentage }
+                                : s
+                        )
+
+                        return {
+                            attendanceLogs: newLogs,
+                            subjects: newSubjects,
+                            loading: false
+                        }
+                    })
+
                     return true
                 } catch (error) {
                     set({ error: (error as Error).message, loading: false })
@@ -350,9 +382,14 @@ export const useAttendanceStore = create<AttendanceState>()(
                 }
             },
 
-            deleteAttendanceLog: async (logId, userId) => {
-                set({ loading: true, error: null })
+            deleteAttendanceLog: async (logId) => {
+                // set({ loading: true, error: null }) // Optional: skip loading state for cleaner UI
                 try {
+                    // Get the log before deleting to know which subject to update (if needed)
+                    // Or just use the logId to find it in current state
+                    const logToDelete = get().attendanceLogs.find(l => l.id === logId)
+                    if (!logToDelete) return false // Already gone?
+
                     const { error } = await supabase
                         .from('attendance_logs')
                         .delete()
@@ -360,9 +397,32 @@ export const useAttendanceStore = create<AttendanceState>()(
 
                     if (error) throw error
 
-                    await get().fetchSubjects(userId)
-                    await get().fetchAttendanceLogs(userId)
-                    set({ loading: false })
+                    // Update local state
+                    set((state) => {
+                        const newLogs = state.attendanceLogs.filter(l => l.id !== logId)
+                        const subjectId = logToDelete.subject_id
+
+                        // Recalculate stats for the subject
+                        const subjectLogs = newLogs.filter(l => l.subject_id === subjectId)
+                        const present = subjectLogs.filter(l => l.status === 'present').length
+                        const absent = subjectLogs.filter(l => l.status === 'absent').length
+                        const cancelled = subjectLogs.filter(l => l.status === 'cancelled').length
+                        const total = present + absent
+                        const percentage = total > 0 ? (present / total) * 100 : 0
+
+                        const newSubjects = state.subjects.map(s =>
+                            s.id === subjectId
+                                ? { ...s, present, absent, cancelled, percentage }
+                                : s
+                        )
+
+                        return {
+                            attendanceLogs: newLogs,
+                            subjects: newSubjects,
+                            loading: false
+                        }
+                    })
+
                     return true
                 } catch (error) {
                     set({ error: (error as Error).message, loading: false })
@@ -385,3 +445,4 @@ export const useAttendanceStore = create<AttendanceState>()(
         }
     )
 )
+

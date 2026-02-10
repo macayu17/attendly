@@ -43,7 +43,7 @@ export function SubjectCard({ subject, index = 0 }: SubjectCardProps) {
 
         // Deselect if clicking the same status
         if (todayLog && todayLog.status === status) {
-            const ok = await deleteAttendanceLog(todayLog.id, user.id)
+            const ok = await deleteAttendanceLog(todayLog.id)
             flash(ok ? 'Attendance removed' : 'Could not remove attendance')
             return
         }
