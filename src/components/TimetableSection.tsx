@@ -98,7 +98,7 @@ export function TimetableSection({ weekStart, onNextWeek, onPrevWeek, onJumpToTo
         }, 2000)
     }
 
-    const handleMarkFromSchedule = async (entryId: string, subjectId: string, status: 'present' | 'absent' | 'cancelled', existingLogId?: string, currentStatus?: 'present' | 'absent' | 'cancelled', dateStr?: string) => {
+    const handleMarkFromSchedule = async (entryId: string, subjectId: string, status: 'present' | 'absent' | 'cancelled', sessionNumber: number, existingLogId?: string, currentStatus?: 'present' | 'absent' | 'cancelled', dateStr?: string) => {
         if (!user || loading) return
         if (existingLogId && currentStatus === status) {
             const ok = await deleteAttendanceLog(existingLogId)
@@ -106,7 +106,7 @@ export function TimetableSection({ weekStart, onNextWeek, onPrevWeek, onJumpToTo
             return
         }
 
-        const ok = await markAttendance(subjectId, user.id, status, dateStr)
+        const ok = await markAttendance(subjectId, user.id, status, dateStr, sessionNumber)
         const label = status === 'present' ? 'Present' : status === 'absent' ? 'Absent' : 'Cancelled'
         flashEntryFeedback(entryId, ok ? `Marked ${label}` : 'Could not mark attendance')
     }
@@ -205,27 +205,43 @@ export function TimetableSection({ weekStart, onNextWeek, onPrevWeek, onJumpToTo
                                 const usedLogIds = new Set<string>()
 
                                 // 1. Map scheduled entries and try to attach existing logs
+                                // 1. Map scheduled entries with session numbers
+                                const sessionCounts: Record<string, number> = {}
+
                                 const scheduledItems = dayEntries.map(entry => {
                                     const subject = subjects.find(s => s.id === entry.subject_id)
                                     let associatedLog = undefined
 
+                                    // Calculate session number for this subject on this day
                                     if (subject) {
-                                        // Find a log for this subject on this day that hasn't been used yet
-                                        // We sort by session_number (asc) to match schedule order roughly if sessions existed
-                                        // Since we often only have one, it grabs that one.
-                                        associatedLog = attendanceLogs
-                                            .filter(l => l.subject_id === subject.id && l.marked_at === selectedDateStr && !usedLogIds.has(l.id))
-                                            .sort((a, b) => (a.session_number || 1) - (b.session_number || 1))[0]
+                                        if (!sessionCounts[subject.id]) sessionCounts[subject.id] = 0
+                                        sessionCounts[subject.id]++
+                                        const sessionNumber = sessionCounts[subject.id]
+
+                                        // Find exact log match including session number
+                                        associatedLog = attendanceLogs.find(l =>
+                                            l.subject_id === subject.id &&
+                                            l.marked_at === selectedDateStr &&
+                                            l.session_number === sessionNumber
+                                        )
 
                                         if (associatedLog) {
                                             usedLogIds.add(associatedLog.id)
+                                        }
+
+                                        return {
+                                            type: 'scheduled' as const,
+                                            data: entry,
+                                            log: associatedLog,
+                                            sessionNumber
                                         }
                                     }
 
                                     return {
                                         type: 'scheduled' as const,
                                         data: entry,
-                                        log: associatedLog // Pass the specific log we found
+                                        log: undefined,
+                                        sessionNumber: 1
                                     }
                                 })
 
@@ -329,7 +345,7 @@ export function TimetableSection({ weekStart, onNextWeek, onPrevWeek, onJumpToTo
                                                     <div className="flex items-center gap-2">
                                                         <div className="flex items-center gap-1">
                                                             <button
-                                                                onClick={() => handleMarkFromSchedule(entry.id, subject.id, 'present', existingLog?.id, currentStatus, dateStr)}
+                                                                onClick={() => handleMarkFromSchedule(entry.id, subject.id, 'present', item.sessionNumber, existingLog?.id, currentStatus, dateStr)}
                                                                 disabled={loading}
                                                                 className={`p-2 rounded-lg transition-colors ${currentStatus === 'present'
                                                                     ? 'bg-green-500 text-white'
@@ -340,7 +356,7 @@ export function TimetableSection({ weekStart, onNextWeek, onPrevWeek, onJumpToTo
                                                                 <Check className="w-4 h-4" />
                                                             </button>
                                                             <button
-                                                                onClick={() => handleMarkFromSchedule(entry.id, subject.id, 'absent', existingLog?.id, currentStatus, dateStr)}
+                                                                onClick={() => handleMarkFromSchedule(entry.id, subject.id, 'absent', item.sessionNumber, existingLog?.id, currentStatus, dateStr)}
                                                                 disabled={loading}
                                                                 className={`p-2 rounded-lg transition-colors ${currentStatus === 'absent'
                                                                     ? 'bg-red-500 text-white'
@@ -351,7 +367,7 @@ export function TimetableSection({ weekStart, onNextWeek, onPrevWeek, onJumpToTo
                                                                 <X className="w-4 h-4" />
                                                             </button>
                                                             <button
-                                                                onClick={() => handleMarkFromSchedule(entry.id, subject.id, 'cancelled', existingLog?.id, currentStatus, dateStr)}
+                                                                onClick={() => handleMarkFromSchedule(entry.id, subject.id, 'cancelled', item.sessionNumber, existingLog?.id, currentStatus, dateStr)}
                                                                 disabled={loading}
                                                                 className={`p-2 rounded-lg transition-colors ${currentStatus === 'cancelled'
                                                                     ? 'bg-yellow-500 text-white'
