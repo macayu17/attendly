@@ -24,6 +24,7 @@ export function EventsModal({ isOpen, onClose }: EventsModalProps) {
     const [name, setName] = useState('')
     const [startDate, setStartDate] = useState('')
     const [endDate, setEndDate] = useState('')
+    const [countsAttendance, setCountsAttendance] = useState(false)
     const [type, setType] = useState<typeof EVENT_TYPES[number]['id']>('event')
 
     useEffect(() => {
@@ -46,12 +47,15 @@ export function EventsModal({ isOpen, onClose }: EventsModalProps) {
             name,
             start_date: startDate,
             end_date: endDate,
+            end_date: endDate,
             event_type: type,
+            counts_attendance: countsAttendance,
             description: null
         })
         setName('')
         setStartDate('')
         setEndDate('')
+        setCountsAttendance(false)
         setType('event')
     }
 
@@ -152,62 +156,77 @@ export function EventsModal({ isOpen, onClose }: EventsModalProps) {
                                             />
                                         </div>
                                     </div>
-
-                                    <button
-                                        type="submit"
-                                        disabled={loading}
-                                        className="btn btn-primary w-full h-10 rounded-xl text-sm font-medium flex items-center justify-center gap-2"
-                                    >
-                                        <Plus className="w-4 h-4" />
-                                        Add Event
-                                    </button>
-                                </form>
-
-                                {/* List */}
-                                <div className="space-y-2">
-                                    <h3 className="text-sm font-medium text-muted uppercase tracking-wider">Upcoming Events</h3>
-                                    {events.length === 0 ? (
-                                        <div className="text-center py-8 border border-dashed border-white/10 rounded-xl">
-                                            <p className="text-muted text-sm">No events added yet.</p>
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-2">
-                                            {events.map((event) => {
-                                                const typeConfig = EVENT_TYPES.find(t => t.id === event.event_type) || EVENT_TYPES[1]
-                                                const Icon = typeConfig.icon
-                                                return (
-                                                    <div
-                                                        key={event.id}
-                                                        className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 group hover:border-white/10 transition-colors"
-                                                    >
-                                                        <div className="flex items-center gap-3">
-                                                            <div className={`w-10 h-10 rounded-xl ${typeConfig.bg} flex items-center justify-center ${typeConfig.color}`}>
-                                                                <Icon className="w-5 h-5" />
-                                                            </div>
-                                                            <div>
-                                                                <p className="text-white font-medium text-sm">{event.name}</p>
-                                                                <p className="text-muted text-xs">
-                                                                    {format(parseISO(event.start_date), 'MMM d')} - {format(parseISO(event.end_date), 'MMM d, yyyy')}
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                        <button
-                                                            onClick={() => handleDelete(event.id)}
-                                                            className="p-2 text-muted hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all hover:bg-white/5 rounded-lg"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
-                                                )
-                                            })}
-                                        </div>
-                                    )}
-                                </div>
                             </div>
+
+                            <div className="flex items-center gap-2 px-1">
+                                <input
+                                    type="checkbox"
+                                    id="countsAttendance"
+                                    checked={countsAttendance}
+                                    onChange={(e) => setCountsAttendance(e.target.checked)}
+                                    className="w-4 h-4 rounded border-white/10 bg-white/5 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0"
+                                />
+                                <label htmlFor="countsAttendance" className="text-sm text-muted cursor-pointer select-none">
+                                    Count attendance during this event?
+                                </label>
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="btn btn-primary w-full h-10 rounded-xl text-sm font-medium flex items-center justify-center gap-2"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Add Event
+                            </button>
+                        </form>
+
+                        {/* List */}
+                        <div className="space-y-2">
+                            <h3 className="text-sm font-medium text-muted uppercase tracking-wider">Upcoming Events</h3>
+                            {events.length === 0 ? (
+                                <div className="text-center py-8 border border-dashed border-white/10 rounded-xl">
+                                    <p className="text-muted text-sm">No events added yet.</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-2">
+                                    {events.map((event) => {
+                                        const typeConfig = EVENT_TYPES.find(t => t.id === event.event_type) || EVENT_TYPES[1]
+                                        const Icon = typeConfig.icon
+                                        return (
+                                            <div
+                                                key={event.id}
+                                                className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 group hover:border-white/10 transition-colors"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-10 h-10 rounded-xl ${typeConfig.bg} flex items-center justify-center ${typeConfig.color}`}>
+                                                        <Icon className="w-5 h-5" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-white font-medium text-sm">{event.name}</p>
+                                                        <p className="text-muted text-xs">
+                                                            {format(parseISO(event.start_date), 'MMM d')} - {format(parseISO(event.end_date), 'MMM d, yyyy')}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() => handleDelete(event.id)}
+                                                    className="p-2 text-muted hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all hover:bg-white/5 rounded-lg"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            )}
                         </div>
-                    </motion.div>
+                    </div>
+                </div>
+        </motion.div>
                 </>
-            )}
-        </AnimatePresence>
+            )
+}
+        </AnimatePresence >
     )
 }

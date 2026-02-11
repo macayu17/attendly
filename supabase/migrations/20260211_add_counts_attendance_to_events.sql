@@ -1,0 +1,2 @@
+
+ALTER TABLE events ADD COLUMN counts_attendance BOOLEAN DEFAULT FALSE;

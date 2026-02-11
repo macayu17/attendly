@@ -98,6 +98,7 @@ export interface Database {
                     start_date: string
                     end_date: string
                     event_type: 'exam' | 'event' | 'placement' | 'other'
+                    counts_attendance: boolean
                     description: string | null
                     created_at: string
                 }

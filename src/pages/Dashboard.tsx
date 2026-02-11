@@ -93,9 +93,14 @@ export function Dashboard() {
 
         const dateStr = format(currentTime, 'yyyy-MM-dd')
         const isHoliday = holidays.some(h => h.date === dateStr)
-        const isEvent = events.some(e => dateStr >= e.start_date && dateStr <= e.end_date)
+        // Find blocking event (one that does NOT count attendance)
+        const blockingEvent = events.find(e =>
+            dateStr >= e.start_date &&
+            dateStr <= e.end_date &&
+            !e.counts_attendance
+        )
 
-        if (isHoliday || isEvent) return null
+        if (isHoliday || blockingEvent) return null
 
         const now = new Date()
         const currentDay = now.getDay()
@@ -253,7 +258,7 @@ export function Dashboard() {
                             </div>
                         ) : (
                             <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-sm">
-                                {events.some(e => format(currentTime, 'yyyy-MM-dd') >= e.start_date && format(currentTime, 'yyyy-MM-dd') <= e.end_date) ? (
+                                {events.some(e => format(currentTime, 'yyyy-MM-dd') >= e.start_date && format(currentTime, 'yyyy-MM-dd') <= e.end_date && !e.counts_attendance) ? (
                                     <span className="text-indigo-400">📅 Event Day</span>
                                 ) : holidays.some(h => h.date === format(currentTime, 'yyyy-MM-dd')) ? (
                                     <span className="text-pink-400">🎉 Holiday</span>

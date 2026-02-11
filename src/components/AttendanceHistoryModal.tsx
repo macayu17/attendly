@@ -29,12 +29,23 @@ export function AttendanceHistoryModal({ isOpen, onClose }: AttendanceHistoryMod
         if (semesterSettings.startDate && dateString < semesterSettings.startDate) return []
         if (semesterSettings.endDate && dateString > semesterSettings.endDate) return []
 
+        // Check for holidays
+        if (holidays.some(h => h.date === dateString)) return []
+
+        // Check for blocking events (those that do NOT count attendance)
+        const blockingEvent = events.find(e =>
+            dateString >= e.start_date &&
+            dateString <= e.end_date &&
+            !e.counts_attendance
+        )
+        if (blockingEvent) return []
+
         return [...new Set(
             timetable
                 .filter(t => t.day_of_week === dayOfWeek)
                 .map(t => t.subject_id)
         )]
-    }, [timetable, dayOfWeek, dateString, semesterSettings])
+    }, [timetable, dayOfWeek, dateString, semesterSettings, holidays, events])
 
     // Get subjects to show (scheduled OR with existing attendance)
     const subjectsToShow = useMemo(() => {
