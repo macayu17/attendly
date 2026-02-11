@@ -205,7 +205,7 @@ export function AttendanceHistoryModal({ isOpen, onClose }: AttendanceHistoryMod
                                     <div className="relative group">
                                         <p className="text-white font-semibold cursor-pointer flex items-center justify-center gap-2">
                                             {displayDate}
-                                            <Calendar className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-white/60" />
+                                            <Calendar className="w-5 h-5 text-white" />
                                         </p>
                                         <input
                                             type="date"
@@ -258,8 +258,8 @@ export function AttendanceHistoryModal({ isOpen, onClose }: AttendanceHistoryMod
                             {/* Holiday/Event Banner */}
                             {(holiday || event) && (
                                 <div className={`mb-4 p-4 rounded-2xl border flex items-center gap-3 ${holiday
-                                        ? 'bg-gradient-to-br from-indigo-500/20 to-purple-600/20 border-indigo-500/20'
-                                        : 'bg-gradient-to-br from-blue-500/20 to-teal-600/20 border-blue-500/20'
+                                    ? 'bg-gradient-to-br from-indigo-500/20 to-purple-600/20 border-indigo-500/20'
+                                    : 'bg-gradient-to-br from-blue-500/20 to-teal-600/20 border-blue-500/20'
                                     }`}>
                                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl ${holiday ? 'bg-indigo-500/20' : 'bg-blue-500/20'
                                         }`}>
