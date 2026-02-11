@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, RefreshCw, BookOpen, Home, TrendingUp, Calendar, Zap, History } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useAttendanceStore } from '@/stores/attendanceStore'
-import { startOfWeek, addDays, subDays } from 'date-fns'
+import { startOfWeek, addDays, subDays, format } from 'date-fns'
 import { SubjectCard } from '@/components/SubjectCard'
 import { AddSubjectModal } from '@/components/AddSubjectModal'
 import { SettingsModal } from '@/components/SettingsModal'
@@ -15,20 +15,26 @@ import { TimetableSection } from '@/components/TimetableSection'
 import PixelBlast from '@/components/PixelBlast'
 import { AddClassModal } from '@/components/AddClassModal'
 import { HolidaysModal } from '@/components/HolidaysModal'
+import { EventsModal } from '@/components/EventsModal'
 import { PartyPopper } from 'lucide-react'
 
 export function Dashboard() {
     const { user, signOut } = useAuthStore()
-    const { subjects, loading, fetchSubjects, timetable } = useAttendanceStore()
+    const { subjects, loading, fetchSubjects, timetable, events, fetchEvents, holidays, fetchHolidays } = useAttendanceStore()
     const [showAddModal, setShowAddModal] = useState(false)
     const [showAddClassModal, setShowAddClassModal] = useState(false)
     const [showSettings, setShowSettings] = useState(false)
     const [showHistory, setShowHistory] = useState(false)
     const [showHolidays, setShowHolidays] = useState(false)
+    const [showEvents, setShowEvents] = useState(false)
 
     useEffect(() => {
-        if (user) fetchSubjects(user.id)
-    }, [user, fetchSubjects])
+        if (user) {
+            fetchSubjects(user.id)
+            fetchEvents(user.id)
+            fetchHolidays(user.id)
+        }
+    }, [user, fetchSubjects, fetchEvents, fetchHolidays])
 
     // Calc Stats
     const totalPresent = subjects.reduce((sum, s) => sum + s.present, 0)
@@ -81,8 +87,15 @@ export function Dashboard() {
     const greeting = hourlyGreetings[hour] || 'Hey There'
 
     // Calculate Next Class
+    // Calculate Next Class
     const nextClass = useMemo(() => {
         if (!timetable.length) return null
+
+        const dateStr = format(currentTime, 'yyyy-MM-dd')
+        const isHoliday = holidays.some(h => h.date === dateStr)
+        const isEvent = events.some(e => dateStr >= e.start_date && dateStr <= e.end_date)
+
+        if (isHoliday || isEvent) return null
 
         const now = new Date()
         const currentDay = now.getDay()
@@ -110,7 +123,7 @@ export function Dashboard() {
         const timeDisplay = diff < 60 ? `in ${diff} min` : `at ${upcoming.start_time.slice(0, 5)}`
 
         return { subject, timeDisplay }
-    }, [timetable, subjects, currentTime])
+    }, [timetable, subjects, currentTime, holidays, events])
 
     // Week Navigation State
     const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }))
@@ -147,9 +160,9 @@ export function Dashboard() {
             onClick: () => setShowHistory(true)
         },
         {
-            icon: <div className="w-full h-full rounded-full bg-white/10 flex items-center justify-center text-xs font-bold text-white uppercase">{user?.email?.charAt(0) || 'U'}</div>,
-            label: 'Profile',
-            onClick: () => setShowSettings(true)
+            icon: <Calendar className="w-5 h-5 text-indigo-400" />,
+            label: 'Events',
+            onClick: () => setShowEvents(true)
         },
         {
             icon: <PartyPopper className="w-5 h-5 text-orange-400" />,
@@ -232,11 +245,21 @@ export function Dashboard() {
                     </h1>
                     <div className="flex items-center gap-4 text-white/60 mb-2">
                         <p className="text-lg font-medium">{today}</p>
-                        {nextClass && (
+                        {nextClass ? (
                             <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-sm animate-in fade-in slide-in-from-left-4">
                                 <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: nextClass.subject.color_code }} />
                                 <span className="text-white">Next: {nextClass.subject.name}</span>
                                 <span className="text-white/40">{nextClass.timeDisplay}</span>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-sm">
+                                {events.some(e => format(currentTime, 'yyyy-MM-dd') >= e.start_date && format(currentTime, 'yyyy-MM-dd') <= e.end_date) ? (
+                                    <span className="text-indigo-400">📅 Event Day</span>
+                                ) : holidays.some(h => h.date === format(currentTime, 'yyyy-MM-dd')) ? (
+                                    <span className="text-pink-400">🎉 Holiday</span>
+                                ) : (
+                                    <span className="text-white/40">No more classes today</span>
+                                )}
                             </div>
                         )}
                     </div>
@@ -356,6 +379,7 @@ export function Dashboard() {
             <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
             <AttendanceHistoryModal isOpen={showHistory} onClose={() => setShowHistory(false)} />
             <HolidaysModal isOpen={showHolidays} onClose={() => setShowHolidays(false)} />
+            <EventsModal isOpen={showEvents} onClose={() => setShowEvents(false)} />
         </div>
     )
 }

@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { supabase } from '@/lib/supabase'
-import type { Subject, AttendanceLog, TimetableEntry, Holiday } from '@/lib/database.types'
+import type { Subject, AttendanceLog, TimetableEntry, Holiday, Event } from '@/lib/database.types'
 
 interface SubjectWithStats extends Subject {
     present: number
@@ -16,6 +16,11 @@ interface AttendanceState {
     timetable: TimetableEntry[]
     attendanceLogs: AttendanceLog[]
     holidays: Holiday[]
+    events: Event[]
+    semesterSettings: {
+        startDate: string | null
+        endDate: string | null
+    }
 
     // UI State
     loading: boolean
@@ -25,7 +30,7 @@ interface AttendanceState {
     fetchSubjects: (userId: string) => Promise<void>
     fetchAttendanceLogs: (userId: string) => Promise<void>
     fetchTimetable: (subjectIds: string[]) => Promise<void>
-    fetchHolidays: (userId: string) => Promise<void>
+    fetchEvents: (userId: string) => Promise<void>
 
     addSubject: (subject: Omit<Subject, 'id' | 'created_at'>) => Promise<void>
     updateSubject: (id: string, updates: Partial<Subject>) => Promise<void>
@@ -34,8 +39,15 @@ interface AttendanceState {
     addTimetableEntry: (entry: Omit<TimetableEntry, 'id'>) => Promise<void>
     deleteTimetableEntry: (id: string) => Promise<void>
 
+
     addHoliday: (holiday: Omit<Holiday, 'id' | 'created_at'>) => Promise<void>
     deleteHoliday: (id: string) => Promise<void>
+    fetchHolidays: (userId: string) => Promise<void>
+
+    addEvent: (event: Omit<Event, 'id' | 'created_at'>) => Promise<void>
+    deleteEvent: (id: string) => Promise<void>
+
+    setSemesterSettings: (settings: { startDate: string | null, endDate: string | null }) => void
 
     markAttendance: (subjectId: string, userId: string, status: 'present' | 'absent' | 'cancelled', date?: string, sessionNumber?: number) => Promise<boolean>
     deleteAttendanceLog: (logId: string) => Promise<boolean>
@@ -49,8 +61,13 @@ const initialState = {
     timetable: [],
     attendanceLogs: [],
     holidays: [],
+    events: [],
     loading: false,
     error: null,
+    semesterSettings: {
+        startDate: null,
+        endDate: null
+    }
 }
 
 export const useAttendanceStore = create<AttendanceState>()(
@@ -303,6 +320,64 @@ export const useAttendanceStore = create<AttendanceState>()(
                 }
             },
 
+            fetchEvents: async (userId: string) => {
+                try {
+                    const { data, error } = await supabase
+                        .from('events')
+                        .select('*')
+                        .eq('user_id', userId)
+                        .order('start_date', { ascending: true })
+
+                    if (error) throw error
+                    set({ events: data || [] })
+                } catch (error) {
+                    set({ error: (error as Error).message })
+                }
+            },
+
+            addEvent: async (event) => {
+                set({ loading: true, error: null })
+                try {
+                    const { data, error } = await supabase
+                        .from('events')
+                        .insert(event)
+                        .select()
+                        .single()
+
+                    if (error) throw error
+
+                    set((state) => ({
+                        events: [...state.events, data].sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime()),
+                        loading: false,
+                    }))
+                } catch (error) {
+                    set({ error: (error as Error).message, loading: false })
+                }
+            },
+
+            deleteEvent: async (id) => {
+                set({ loading: true, error: null })
+                try {
+                    const { error } = await supabase
+                        .from('events')
+                        .delete()
+                        .eq('id', id)
+
+                    if (error) throw error
+
+                    set((state) => ({
+                        events: state.events.filter((e) => e.id !== id),
+                        loading: false,
+                    }))
+                } catch (error) {
+                    set({ error: (error as Error).message, loading: false })
+                }
+            },
+
+            setSemesterSettings: (settings) => {
+                set({ semesterSettings: settings })
+            },
+
             markAttendance: async (subjectId, userId, status, date, sessionNumber = 1) => {
                 const markedAt = date || new Date().toISOString().split('T')[0]
 
@@ -441,6 +516,8 @@ export const useAttendanceStore = create<AttendanceState>()(
                 subjects: state.subjects,
                 timetable: state.timetable,
                 holidays: state.holidays,
+                events: state.events,
+                semesterSettings: state.semesterSettings,
             }),
         }
     )

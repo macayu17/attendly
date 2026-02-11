@@ -90,6 +90,38 @@ export interface Database {
                     session_number?: number
                 }
             }
+            events: {
+                Row: {
+                    id: string
+                    user_id: string
+                    name: string
+                    start_date: string
+                    end_date: string
+                    event_type: 'exam' | 'event' | 'placement' | 'other'
+                    description: string | null
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    user_id: string
+                    name: string
+                    start_date: string
+                    end_date: string
+                    event_type?: 'exam' | 'event' | 'placement' | 'other'
+                    description?: string | null
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    user_id?: string
+                    name?: string
+                    start_date?: string
+                    end_date?: string
+                    event_type?: 'exam' | 'event' | 'placement' | 'other'
+                    description?: string | null
+                    created_at?: string
+                }
+            }
             holidays: {
                 Row: {
                     id: string
@@ -124,4 +156,5 @@ export interface Database {
 export type Subject = Database['public']['Tables']['subjects']['Row']
 export type TimetableEntry = Database['public']['Tables']['timetable']['Row']
 export type AttendanceLog = Database['public']['Tables']['attendance_logs']['Row']
+export type Event = Database['public']['Tables']['events']['Row']
 export type Holiday = Database['public']['Tables']['holidays']['Row']

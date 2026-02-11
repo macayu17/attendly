@@ -14,9 +14,10 @@ interface AttendanceHistoryModalProps {
 export function AttendanceHistoryModal({ isOpen, onClose }: AttendanceHistoryModalProps) {
     const [selectedDate, setSelectedDate] = useState(new Date())
     const [showAllSubjects, setShowAllSubjects] = useState(false)
-    const { subjects, attendanceLogs, timetable, markAttendance, deleteAttendanceLog, loading } = useAttendanceStore()
+    const { subjects, attendanceLogs, timetable, holidays, events, semesterSettings, markAttendance, deleteAttendanceLog, loading } = useAttendanceStore()
     const { user } = useAuthStore()
     const { message, flash } = useMarkFeedback()
+
 
     const dateString = format(selectedDate, 'yyyy-MM-dd')
     const displayDate = format(selectedDate, 'EEEE, MMMM d, yyyy')
@@ -24,12 +25,16 @@ export function AttendanceHistoryModal({ isOpen, onClose }: AttendanceHistoryMod
 
     // Get subjects scheduled for this day from timetable
     const scheduledSubjectIds = useMemo(() => {
+        // Check if date is within semester settings
+        if (semesterSettings.startDate && dateString < semesterSettings.startDate) return []
+        if (semesterSettings.endDate && dateString > semesterSettings.endDate) return []
+
         return [...new Set(
             timetable
                 .filter(t => t.day_of_week === dayOfWeek)
                 .map(t => t.subject_id)
         )]
-    }, [timetable, dayOfWeek])
+    }, [timetable, dayOfWeek, dateString, semesterSettings])
 
     // Get subjects to show (scheduled OR with existing attendance)
     const subjectsToShow = useMemo(() => {
@@ -51,10 +56,19 @@ export function AttendanceHistoryModal({ isOpen, onClose }: AttendanceHistoryMod
                 .sort((a, b) => (a.session_number || 1) - (b.session_number || 1))
 
             // Get scheduled times for this subject today
-            const scheduledTimes = timetable
-                .filter(t => t.subject_id === subject.id && t.day_of_week === dayOfWeek)
-                .sort((a, b) => a.start_time.localeCompare(b.start_time))
-                .map(t => t.start_time.slice(0, 5))
+            // If outside semester, no scheduled times (unless explicitly logged? No, logs are separate)
+            let scheduledTimes: string[] = []
+
+            const isWithinSemester =
+                (!semesterSettings.startDate || dateString >= semesterSettings.startDate) &&
+                (!semesterSettings.endDate || dateString <= semesterSettings.endDate)
+
+            if (isWithinSemester) {
+                scheduledTimes = timetable
+                    .filter(t => t.subject_id === subject.id && t.day_of_week === dayOfWeek)
+                    .sort((a, b) => a.start_time.localeCompare(b.start_time))
+                    .map(t => t.start_time.slice(0, 5))
+            }
 
             // Create combined sessions list (logs + scheduled placeholders)
             const maxSessionNum = Math.max(
@@ -88,7 +102,7 @@ export function AttendanceHistoryModal({ isOpen, onClose }: AttendanceHistoryMod
                 isScheduled: scheduledSubjectIds.includes(subject.id)
             }
         })
-    }, [subjectsToShow, attendanceLogs, dateString, timetable, dayOfWeek, scheduledSubjectIds, user])
+    }, [subjectsToShow, attendanceLogs, dateString, timetable, dayOfWeek, scheduledSubjectIds, user, semesterSettings])
 
     const handleStatusChange = async (subjectId: string, sessionNumber: number, newStatus: 'present' | 'absent' | 'cancelled' | null, existingLogId?: string) => {
         if (!user) return
@@ -132,6 +146,9 @@ export function AttendanceHistoryModal({ isOpen, onClose }: AttendanceHistoryMod
     }
 
     const isToday = format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
+    const holiday = holidays.find(h => h.date === dateString)
+    const event = events.find(e => dateString >= e.start_date && dateString <= e.end_date)
+
 
     return (
         <AnimatePresence>
@@ -237,6 +254,25 @@ export function AttendanceHistoryModal({ isOpen, onClose }: AttendanceHistoryMod
                                     {showAllSubjects ? 'Show Scheduled Only' : 'Show All Subjects'}
                                 </button>
                             </div>
+
+                            {/* Holiday/Event Banner */}
+                            {(holiday || event) && (
+                                <div className={`mb-4 p-4 rounded-2xl border flex items-center gap-3 ${holiday
+                                        ? 'bg-gradient-to-br from-indigo-500/20 to-purple-600/20 border-indigo-500/20'
+                                        : 'bg-gradient-to-br from-blue-500/20 to-teal-600/20 border-blue-500/20'
+                                    }`}>
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl ${holiday ? 'bg-indigo-500/20' : 'bg-blue-500/20'
+                                        }`}>
+                                        {holiday ? '🎉' : '📅'}
+                                    </div>
+                                    <div>
+                                        <p className="text-white font-bold">{holiday?.name || event?.name}</p>
+                                        <p className="text-white/60 text-xs">
+                                            {holiday ? 'No classes today... hopefully!' : `${event?.event_type === 'exam' ? 'Exam' : 'Event'} Day`}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Attendance List */}
                             <div className="space-y-3 max-h-[350px] overflow-y-auto pr-2">

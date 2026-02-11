@@ -1,19 +1,20 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, User, Bell, Palette, Shield, LogOut, ChevronRight, ChevronLeft } from 'lucide-react'
+import { X, User, Bell, Palette, Shield, LogOut, ChevronRight, ChevronLeft, GraduationCap } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useAttendanceStore } from '@/stores/attendanceStore'
+import { EventsModal } from './EventsModal'
 
 interface SettingsModalProps {
     isOpen: boolean
     onClose: () => void
 }
 
-type SettingsView = 'main' | 'account' | 'notifications' | 'appearance' | 'privacy'
+type SettingsView = 'main' | 'account' | 'notifications' | 'appearance' | 'privacy' | 'academic'
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     const { user, signOut, updateProfile, updatePassword: userActionUpdatePassword } = useAuthStore()
-    const { subjects, attendanceLogs } = useAttendanceStore()
+    const { subjects, attendanceLogs, semesterSettings, setSemesterSettings } = useAttendanceStore()
     const [currentView, setCurrentView] = useState<SettingsView>('main')
     const [theme] = useState<'dark' | 'light' | 'system'>(() => {
         if (typeof window !== 'undefined') {
@@ -58,6 +59,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     }, [notifications])
     const [loadingAction, setLoadingAction] = useState<string | null>(null)
     const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+    const [isEventsModalOpen, setIsEventsModalOpen] = useState(false)
 
     // Update local state when user changes (e.g. after save)
     useEffect(() => {
@@ -139,6 +141,13 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             label: 'Account',
             description: 'Manage your profile',
             color: '#3b82f6',
+        },
+        {
+            id: 'academic' as const,
+            icon: GraduationCap,
+            label: 'Academic',
+            description: 'Semester dates & terms',
+            color: '#ec4899',
         },
         {
             id: 'notifications' as const,
@@ -223,6 +232,52 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 Attendly v1.0.0
             </p>
         </>
+    )
+
+    const renderAcademicView = () => (
+        <div className="space-y-4">
+            <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                <p className="text-white font-medium mb-3">Semester Schedule</p>
+
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-white/40 text-sm mb-1.5">Start Date</label>
+                        <input
+                            type="date"
+                            value={semesterSettings.startDate || ''}
+                            onChange={(e) => setSemesterSettings({ ...semesterSettings, startDate: e.target.value || null })}
+                            className="w-full bg-black/20 text-white border border-white/10 rounded-xl px-4 py-2.5 focus:outline-none focus:border-white/20 transition-colors"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-white/40 text-sm mb-1.5">End Date (Optional)</label>
+                        <input
+                            type="date"
+                            value={semesterSettings.endDate || ''}
+                            onChange={(e) => setSemesterSettings({ ...semesterSettings, endDate: e.target.value || null })}
+                            className="w-full bg-black/20 text-white border border-white/10 rounded-xl px-4 py-2.5 focus:outline-none focus:border-white/20 transition-colors"
+                        />
+                        <p className="text-xs text-white/20 mt-1">Leave empty if not confirmed yet</p>
+                    </div>
+                </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                <p className="text-white font-medium mb-1">Impact</p>
+                <p className="text-white/40 text-sm">
+                    Attendance statistics will be calculated based on these dates. Classes before the start date will default to past semesters.
+                </p>
+            </div>
+
+            <button
+                onClick={() => setIsEventsModalOpen(true)}
+                className="w-full p-4 rounded-2xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 text-indigo-400 font-medium transition-all flex items-center justify-between group"
+            >
+                <span>Manage Events & Exams</span>
+                <ChevronRight className="w-5 h-5 opacity-60 group-hover:opacity-100 transition-opacity" />
+            </button>
+        </div>
     )
 
     const renderAccountView = () => (
@@ -401,80 +456,85 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             case 'notifications': return 'Notifications'
             case 'appearance': return 'Appearance'
             case 'privacy': return 'Privacy'
+            case 'academic': return 'Academic'
             default: return 'Settings'
         }
     }
 
     return (
-        <AnimatePresence>
-            {isOpen && (
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4"
-                    onClick={handleClose}
-                >
-                    {/* Backdrop */}
-                    <div className="absolute inset-0 bg-black/70 backdrop-blur-xl" />
-
-                    {/* Modal */}
+        <>
+            <AnimatePresence>
+                {isOpen && (
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                        transition={{ duration: 0.3, type: "spring", damping: 25 }}
-                        className="relative w-full max-w-md overflow-hidden rounded-3xl"
-                        onClick={(e) => e.stopPropagation()}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                        onClick={handleClose}
                     >
-                        {/* Glassy Background */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-2xl" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                        <div className="absolute inset-[1px] rounded-3xl border border-white/10" />
+                        {/* Backdrop */}
+                        <div className="absolute inset-0 bg-black/70 backdrop-blur-xl" />
 
-                        {/* Content */}
-                        <div className="relative p-8">
-                            {/* Header */}
-                            <div className="flex items-center justify-between mb-8">
-                                <div className="flex items-center gap-3">
-                                    {currentView !== 'main' && (
-                                        <button
-                                            onClick={() => setCurrentView('main')}
-                                            className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
-                                        >
-                                            <ChevronLeft className="w-5 h-5 text-white/60" />
-                                        </button>
-                                    )}
-                                    <h2 className="text-xl font-bold text-white">{getViewTitle()}</h2>
+                        {/* Modal */}
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            transition={{ duration: 0.3, type: "spring", damping: 25 }}
+                            className="relative w-full max-w-md overflow-hidden rounded-3xl"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* Glassy Background */}
+                            <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-2xl" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                            <div className="absolute inset-[1px] rounded-3xl border border-white/10" />
+
+                            {/* Content */}
+                            <div className="relative p-8">
+                                {/* Header */}
+                                <div className="flex items-center justify-between mb-8">
+                                    <div className="flex items-center gap-3">
+                                        {currentView !== 'main' && (
+                                            <button
+                                                onClick={() => setCurrentView('main')}
+                                                className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
+                                            >
+                                                <ChevronLeft className="w-5 h-5 text-white/60" />
+                                            </button>
+                                        )}
+                                        <h2 className="text-xl font-bold text-white">{getViewTitle()}</h2>
+                                    </div>
+                                    <button
+                                        onClick={handleClose}
+                                        className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
+                                    >
+                                        <X className="w-5 h-5 text-white/60" />
+                                    </button>
                                 </div>
-                                <button
-                                    onClick={handleClose}
-                                    className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
-                                >
-                                    <X className="w-5 h-5 text-white/60" />
-                                </button>
-                            </div>
 
-                            {/* View Content */}
-                            <AnimatePresence mode="wait">
-                                <motion.div
-                                    key={currentView}
-                                    initial={{ opacity: 0, x: currentView === 'main' ? -20 : 20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: currentView === 'main' ? 20 : -20 }}
-                                    transition={{ duration: 0.2 }}
-                                >
-                                    {currentView === 'main' && renderMainView()}
-                                    {currentView === 'account' && renderAccountView()}
-                                    {currentView === 'notifications' && renderNotificationsView()}
-                                    {currentView === 'appearance' && renderAppearanceView()}
-                                    {currentView === 'privacy' && renderPrivacyView()}
-                                </motion.div>
-                            </AnimatePresence>
-                        </div>
+                                {/* View Content */}
+                                <AnimatePresence mode="wait">
+                                    <motion.div
+                                        key={currentView}
+                                        initial={{ opacity: 0, x: currentView === 'main' ? -20 : 20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: currentView === 'main' ? 20 : -20 }}
+                                        transition={{ duration: 0.2 }}
+                                    >
+                                        {currentView === 'main' && renderMainView()}
+                                        {currentView === 'account' && renderAccountView()}
+                                        {currentView === 'academic' && renderAcademicView()}
+                                        {currentView === 'notifications' && renderNotificationsView()}
+                                        {currentView === 'appearance' && renderAppearanceView()}
+                                        {currentView === 'privacy' && renderPrivacyView()}
+                                    </motion.div>
+                                </AnimatePresence>
+                            </div>
+                        </motion.div>
                     </motion.div>
-                </motion.div>
-            )}
-        </AnimatePresence>
+                )}
+            </AnimatePresence>
+            <EventsModal isOpen={isEventsModalOpen} onClose={() => setIsEventsModalOpen(false)} />
+        </>
     )
 }
