@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, RefreshCw, BookOpen, Home, TrendingUp, Calendar, Zap, History } from 'lucide-react'
+import { Plus, RefreshCw, BookOpen, Home, TrendingUp, Calendar, Zap, History, Settings } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useAttendanceStore } from '@/stores/attendanceStore'
 import { startOfWeek, addDays, subDays, format } from 'date-fns'
@@ -174,6 +174,11 @@ export function Dashboard() {
             label: 'Holidays',
             onClick: () => setShowHolidays(true)
         },
+        {
+            icon: <Settings className="w-5 h-5 text-white/70" />,
+            label: 'Settings',
+            onClick: () => setShowSettings(true)
+        },
     ], [user, loading, fetchSubjects, signOut])
 
     const navItems = useMemo(() => [
@@ -213,12 +218,12 @@ export function Dashboard() {
                         navHeight="54px"
                     />
 
-                    <div className="hidden md:block">
-                        <div className="flex items-center gap-3 bg-[#0A0A0A] rounded-full px-5 py-2.5 border border-white/5">
-                            <Calendar className="w-4 h-4 text-muted" />
+                    <div className="block">
+                        <div className="flex items-center gap-2 md:gap-3 bg-[#0A0A0A] rounded-full px-3 md:px-5 py-2 md:py-2.5 border border-white/5">
+                            <Calendar className="w-3.5 h-3.5 md:w-4 md:h-4 text-muted" />
                             <div className="text-right">
-                                <p className="text-white font-medium text-sm leading-tight">{today}</p>
-                                <p className="text-[10px] text-muted uppercase tracking-wider">
+                                <p className="text-white font-medium text-xs md:text-sm leading-tight">{today}</p>
+                                <p className="text-[10px] text-muted uppercase tracking-wider hidden md:block">
                                     {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })} • {greeting}
                                 </p>
                             </div>
@@ -228,7 +233,7 @@ export function Dashboard() {
             </div>
 
             {/* Timetable Section */}
-            <div id="schedule" className="container mb-64 md:mb-96 relative z-10">
+            <div id="schedule" className="container mb-16 md:mb-96 relative z-10">
                 <TimetableSection
                     weekStart={weekStart}
                     onNextWeek={handleNextWeek}
@@ -238,18 +243,18 @@ export function Dashboard() {
             </div>
 
             {/* Hero Section with Welcome */}
-            <div className="container pt-8 pb-16 relative z-10">
+            <div className="container pt-4 pb-8 md:pt-8 md:pb-16 relative z-10">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
                     className="mb-6 md:mb-8"
                 >
-                    <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 md:mb-3 tracking-tight leading-tight">
+                    <h1 className="text-2xl md:text-5xl font-bold text-white mb-2 md:mb-3 tracking-tight leading-tight">
                         {greeting}, <span className="text-white/50 block md:inline">{user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Student'}</span>
                     </h1>
-                    <div className="flex items-center gap-4 text-white/60 mb-2">
-                        <p className="text-lg font-medium">{today}</p>
+                    <div className="flex flex-wrap items-center gap-2 md:gap-4 text-white/60 mb-2">
+                        <p className="hidden md:block text-sm md:text-lg font-medium">{today}</p>
                         {nextClass ? (
                             <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-sm animate-in fade-in slide-in-from-left-4">
                                 <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: nextClass.subject.color_code }} />
@@ -268,30 +273,30 @@ export function Dashboard() {
                             </div>
                         )}
                     </div>
-                    <p className="text-muted text-lg">Track your attendance and BUNK smartly.</p>                </motion.div>
+                    <p className="text-muted text-sm md:text-lg">Track your attendance and BUNK smartly.</p>                </motion.div>
 
                 {/* Stats Row */}
-                <div id="overview" className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                <div id="overview" className="grid grid-cols-3 gap-2 md:gap-6 mb-10">
                     {/* Main Stat Card */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: 0.1 }}
-                        className="md:col-span-1 card p-8 flex flex-col justify-between relative overflow-hidden min-h-[200px] group hover:border-white/10 transition-colors"
+                        className="col-span-1 card p-3 md:p-8 flex flex-col justify-between relative overflow-hidden min-h-0 md:min-h-[200px] group hover:border-white/10 transition-colors"
                     >
                         <div className="absolute -top-10 -right-10 w-32 h-32 bg-gradient-to-br from-indigo-500/20 to-purple-600/10 blur-3xl rounded-full pointer-events-none group-hover:scale-150 transition-transform duration-500" />
-                        <div className="flex items-center gap-2 mb-4">
-                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-                                <TrendingUp className="w-4 h-4 text-white" />
+                        <div className="flex items-center gap-1.5 md:gap-2 mb-2 md:mb-4">
+                            <div className="w-6 h-6 md:w-8 md:h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                                <TrendingUp className="w-3 h-3 md:w-4 md:h-4 text-white" />
                             </div>
-                            <span className="text-xs text-muted font-medium uppercase tracking-wider">Overall</span>
+                            <span className="text-[10px] md:text-xs text-muted font-medium uppercase tracking-wider">Overall</span>
                         </div>
                         <div>
-                            <span className="text-6xl font-bold text-white tracking-tighter block">
+                            <span className="text-2xl md:text-6xl font-bold text-white tracking-tighter block">
                                 {totalClasses > 0 ? Math.round(overallPercentage) : '--'}%
                             </span>
                             {totalClasses > 0 && (
-                                <span className={`inline-block mt-3 text-xs font-medium px-3 py-1.5 rounded-full ${overallPercentage >= 75 ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
+                                <span className={`hidden md:inline-block mt-3 text-xs font-medium px-3 py-1.5 rounded-full ${overallPercentage >= 75 ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
                                     {overallPercentage >= 75 ? '✓ On Track' : '! Needs Work'}
                                 </span>
                             )}
@@ -303,17 +308,17 @@ export function Dashboard() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: 0.2 }}
-                        className="card p-8 flex flex-col justify-between min-h-[200px] group hover:border-white/10 transition-colors"
+                        className="card p-3 md:p-8 flex flex-col justify-between min-h-0 md:min-h-[200px] group hover:border-white/10 transition-colors"
                     >
-                        <div className="flex items-center gap-2 mb-4">
-                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
-                                <Zap className="w-4 h-4 text-white" />
+                        <div className="flex items-center gap-1.5 md:gap-2 mb-2 md:mb-4">
+                            <div className="w-6 h-6 md:w-8 md:h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+                                <Zap className="w-3 h-3 md:w-4 md:h-4 text-white" />
                             </div>
-                            <span className="text-xs text-muted font-medium uppercase tracking-wider">Safe Bunks</span>
+                            <span className="text-[10px] md:text-xs text-muted font-medium uppercase tracking-wider">Bunks</span>
                         </div>
                         <div>
-                            <span className="text-6xl font-bold text-white tracking-tighter">{overallBunkBuffer}</span>
-                            <p className="text-muted text-sm mt-2">classes you can skip</p>
+                            <span className="text-2xl md:text-6xl font-bold text-white tracking-tighter">{overallBunkBuffer}</span>
+                            <p className="text-muted text-xs md:text-sm mt-1 md:mt-2 hidden md:block">classes you can skip</p>
                         </div>
                     </motion.div>
 
@@ -322,17 +327,17 @@ export function Dashboard() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: 0.3 }}
-                        className="card p-8 flex flex-col justify-between min-h-[200px] group hover:border-white/10 transition-colors"
+                        className="card p-3 md:p-8 flex flex-col justify-between min-h-0 md:min-h-[200px] group hover:border-white/10 transition-colors"
                     >
-                        <div className="flex items-center gap-2 mb-4">
-                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-                                <Calendar className="w-4 h-4 text-white" />
+                        <div className="flex items-center gap-1.5 md:gap-2 mb-2 md:mb-4">
+                            <div className="w-6 h-6 md:w-8 md:h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                                <Calendar className="w-3 h-3 md:w-4 md:h-4 text-white" />
                             </div>
-                            <span className="text-xs text-muted font-medium uppercase tracking-wider">Attended</span>
+                            <span className="text-[10px] md:text-xs text-muted font-medium uppercase tracking-wider">Present</span>
                         </div>
                         <div>
-                            <span className="text-6xl font-bold text-white tracking-tighter">{totalPresent}</span>
-                            <p className="text-muted text-sm mt-2">classes attended</p>
+                            <span className="text-2xl md:text-6xl font-bold text-white tracking-tighter">{totalPresent}</span>
+                            <p className="text-muted text-xs md:text-sm mt-1 md:mt-2 hidden md:block">classes attended</p>
                         </div>
                     </motion.div>
                 </div>
@@ -367,7 +372,7 @@ export function Dashboard() {
                         </button>
                     </motion.div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
                         <AnimatePresence mode='popLayout'>
                             {subjects.map((subject, index) => (
                                 <SubjectCard key={subject.id} subject={subject} index={index} />

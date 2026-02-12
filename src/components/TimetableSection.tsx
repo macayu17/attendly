@@ -162,18 +162,23 @@ export function TimetableSection({ weekStart, onNextWeek, onPrevWeek, onJumpToTo
 
             {/* Day Tabs */}
             <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide snap-x">
-                {DAYS.map(day => (
-                    <button
-                        key={day.value}
-                        onClick={() => setSelectedDay(day.value)}
-                        className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all snap-center ${selectedDay === day.value
-                            ? 'bg-white text-black shadow-lg shadow-white/10'
-                            : 'bg-white/5 text-muted hover:bg-white/10'
-                            }`}
-                    >
-                        {day.label}
-                    </button>
-                ))}
+                {DAYS.map(day => {
+                    const dayOffset = day.value === 0 ? 6 : day.value - 1
+                    const dayDate = addDays(weekStart, dayOffset)
+                    return (
+                        <button
+                            key={day.value}
+                            onClick={() => setSelectedDay(day.value)}
+                            className={`px-3 md:px-4 py-1.5 md:py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all snap-center flex flex-col items-center ${selectedDay === day.value
+                                ? 'bg-white text-black shadow-lg shadow-white/10'
+                                : 'bg-white/5 text-muted hover:bg-white/10'
+                                }`}
+                        >
+                            <span>{day.label}</span>
+                            <span className={`text-[10px] font-normal ${selectedDay === day.value ? 'text-black/60' : 'text-white/40'}`}>{format(dayDate, 'd/M')}</span>
+                        </button>
+                    )
+                })}
             </div>
 
             {/* Schedule List */}
@@ -293,35 +298,76 @@ export function TimetableSection({ weekStart, onNextWeek, onPrevWeek, onJumpToTo
                                         return (
                                             <div key={`scheduled-${entry.id}`} className="space-y-1">
                                                 <div
-                                                    className="group relative flex items-center gap-4 p-4 rounded-2xl bg-[#0F0F11] border border-white/5 hover:border-white/10 transition-colors"
+                                                    className="group relative flex items-center gap-2 md:gap-4 p-3 md:p-4 rounded-2xl bg-[#0F0F11] border border-white/5 hover:border-white/10 transition-colors"
                                                 >
                                                     {/* Time Column */}
-                                                    <div className="flex flex-col items-center min-w-[80px] text-center border-r border-white/5 pr-4">
-                                                        <span className="text-white font-bold text-lg">{formatTime(entry.start_time)}</span>
-                                                        <span className="text-xs text-muted uppercase tracking-wider">{formatTime(entry.end_time)}</span>
+                                                    <div className="flex flex-col items-center min-w-[44px] md:min-w-[80px] text-center border-r border-white/5 pr-2 md:pr-4">
+                                                        <span className="text-white font-bold text-xs md:text-lg">{formatTime(entry.start_time)}</span>
+                                                        <span className="text-[9px] md:text-xs text-muted uppercase tracking-wider">{formatTime(entry.end_time)}</span>
                                                     </div>
 
                                                     {/* Subject Info */}
-                                                    <div className="flex-1 min-w-0 flex items-center justify-between gap-4 pr-4">
-                                                        <div className="min-w-0">
-                                                            <div className="flex items-center gap-2 mb-1">
-                                                                <div
-                                                                    className="w-2 h-2 rounded-full"
-                                                                    style={{ background: subject.color_code }}
-                                                                />
-                                                                <span
-                                                                    className="text-xs font-bold px-2 py-0.5 rounded-md uppercase tracking-wider"
-                                                                    style={{ background: `${subject.color_code}20`, color: subject.color_code }}
-                                                                >
-                                                                    {subject.code || 'SUB'}
-                                                                </span>
-                                                            </div>
-                                                            <h3 className="text-white font-medium text-lg leading-tight truncate">{subject.name}</h3>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center gap-1 md:gap-2 mb-0.5">
+                                                            <div
+                                                                className="w-2 h-2 rounded-full shrink-0"
+                                                                style={{ background: subject.color_code }}
+                                                            />
+                                                            <span
+                                                                className="text-[10px] md:text-xs font-bold px-1.5 md:px-2 py-0.5 rounded-md uppercase tracking-wider shrink-0"
+                                                                style={{ background: `${subject.color_code}20`, color: subject.color_code }}
+                                                            >
+                                                                {subject.code || 'SUB'}
+                                                            </span>
                                                         </div>
+                                                        <h3 className="text-white font-medium text-sm md:text-lg leading-tight truncate">{subject.name}</h3>
+                                                    </div>
 
-                                                        {/* Stats Pill */}
-                                                        <div className="flex flex-col items-end gap-1 shrink-0">
-                                                            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/5 text-white/60 text-xs">
+                                                    {/* Actions + Stats */}
+                                                    <div className="flex items-center gap-1 shrink-0">
+                                                        <button
+                                                            onClick={() => handleMarkFromSchedule(entry.id, subject.id, 'present', item.sessionNumber, existingLog?.id, currentStatus, dateStr)}
+                                                            disabled={loading}
+                                                            className={`p-1.5 md:p-2 rounded-md transition-colors ${currentStatus === 'present'
+                                                                ? 'bg-green-500 text-white'
+                                                                : 'bg-green-500/10 text-green-400 hover:bg-green-500/20'
+                                                                }`}
+                                                            title={`Mark present (${format(selectedDate, 'MMM d')})`}
+                                                        >
+                                                            <Check className="w-4 h-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleMarkFromSchedule(entry.id, subject.id, 'absent', item.sessionNumber, existingLog?.id, currentStatus, dateStr)}
+                                                            disabled={loading}
+                                                            className={`p-1.5 md:p-2 rounded-md transition-colors ${currentStatus === 'absent'
+                                                                ? 'bg-red-500 text-white'
+                                                                : 'bg-red-500/10 text-red-400 hover:bg-red-500/20'
+                                                                }`}
+                                                            title={`Mark absent (${format(selectedDate, 'MMM d')})`}
+                                                        >
+                                                            <X className="w-4 h-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleMarkFromSchedule(entry.id, subject.id, 'cancelled', item.sessionNumber, existingLog?.id, currentStatus, dateStr)}
+                                                            disabled={loading}
+                                                            className={`p-1.5 md:p-2 rounded-md transition-colors ${currentStatus === 'cancelled'
+                                                                ? 'bg-yellow-500 text-white'
+                                                                : 'bg-white/5 text-muted hover:bg-white/10'
+                                                                }`}
+                                                            title={`Mark cancelled (${format(selectedDate, 'MMM d')})`}
+                                                        >
+                                                            <Minus className="w-4 h-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDelete(entry.id)}
+                                                            className="hidden md:inline-flex opacity-0 group-hover:opacity-100 p-2 hover:bg-red-500/10 rounded-lg text-muted hover:text-red-400 transition-all items-center justify-center"
+                                                            title="Remove class"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                        {/* Stats pills - inline with buttons */}
+                                                        <div className="flex flex-col md:flex-row items-end md:items-center gap-0.5 md:gap-2 ml-0.5">
+                                                            <div className="flex items-center gap-1 px-1.5 md:px-2 py-0.5 rounded-md bg-white/5 text-white/60 text-[9px] md:text-xs">
                                                                 <span className="w-1 h-1 rounded-full bg-white/40" />
                                                                 <span>{subject.percentage.toFixed(1)}%</span>
                                                             </div>
@@ -331,60 +377,13 @@ export function TimetableSection({ weekStart, onNextWeek, onPrevWeek, onJumpToTo
                                                                 const isLow = subject.percentage < subject.min_attendance_req
 
                                                                 return (
-                                                                    <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs ${isLow ? 'bg-red-500/10 text-red-400' : 'bg-green-500/10 text-green-400'
-                                                                        }`}>
+                                                                    <div className={`flex items-center gap-1 px-1.5 md:px-2 py-0.5 rounded-md text-[9px] md:text-xs ${isLow ? 'bg-red-500/10 text-red-400' : 'bg-green-500/10 text-green-400'}`}>
                                                                         <span className={`w-1 h-1 rounded-full ${isLow ? 'bg-red-400' : 'bg-green-400'}`} />
-                                                                        <span className="font-mono">{bunkBuffer < 0 ? `need ${Math.abs(bunkBuffer)}` : `${bunkBuffer} buffer`}</span>
+                                                                        <span className="font-mono">{bunkBuffer < 0 ? `need ${Math.abs(bunkBuffer)}` : `${bunkBuffer} buf`}</span>
                                                                     </div>
                                                                 )
                                                             })()}
                                                         </div>
-                                                    </div>
-
-                                                    {/* Actions */}
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="flex items-center gap-1">
-                                                            <button
-                                                                onClick={() => handleMarkFromSchedule(entry.id, subject.id, 'present', item.sessionNumber, existingLog?.id, currentStatus, dateStr)}
-                                                                disabled={loading}
-                                                                className={`p-2 rounded-lg transition-colors ${currentStatus === 'present'
-                                                                    ? 'bg-green-500 text-white'
-                                                                    : 'bg-green-500/10 text-green-400 hover:bg-green-500/20'
-                                                                    }`}
-                                                                title={`Mark present (${format(selectedDate, 'MMM d')})`}
-                                                            >
-                                                                <Check className="w-4 h-4" />
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleMarkFromSchedule(entry.id, subject.id, 'absent', item.sessionNumber, existingLog?.id, currentStatus, dateStr)}
-                                                                disabled={loading}
-                                                                className={`p-2 rounded-lg transition-colors ${currentStatus === 'absent'
-                                                                    ? 'bg-red-500 text-white'
-                                                                    : 'bg-red-500/10 text-red-400 hover:bg-red-500/20'
-                                                                    }`}
-                                                                title={`Mark absent (${format(selectedDate, 'MMM d')})`}
-                                                            >
-                                                                <X className="w-4 h-4" />
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleMarkFromSchedule(entry.id, subject.id, 'cancelled', item.sessionNumber, existingLog?.id, currentStatus, dateStr)}
-                                                                disabled={loading}
-                                                                className={`p-2 rounded-lg transition-colors ${currentStatus === 'cancelled'
-                                                                    ? 'bg-yellow-500 text-white'
-                                                                    : 'bg-white/5 text-muted hover:bg-white/10'
-                                                                    }`}
-                                                                title={`Mark cancelled (${format(selectedDate, 'MMM d')})`}
-                                                            >
-                                                                <Minus className="w-4 h-4" />
-                                                            </button>
-                                                        </div>
-                                                        <button
-                                                            onClick={() => handleDelete(entry.id)}
-                                                            className="opacity-0 group-hover:opacity-100 p-2 hover:bg-red-500/10 rounded-lg text-muted hover:text-red-400 transition-all"
-                                                            title="Remove class"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
                                                     </div>
                                                 </div>
                                                 {entryFeedback[entry.id] && (

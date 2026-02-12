@@ -185,10 +185,10 @@ export function AttendanceHistoryModal({ isOpen, onClose }: AttendanceHistoryMod
                         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                         <div className="absolute inset-[1px] rounded-3xl border border-white/10" />
 
-                        <div className="relative p-8">
+                        <div className="relative p-4 md:p-8">
                             {/* Header */}
-                            <div className="flex items-center justify-between mb-6">
-                                <h2 className="text-xl font-bold text-white">📅 Attendance History</h2>
+                            <div className="flex items-center justify-between mb-4 md:mb-6">
+                                <h2 className="text-base md:text-xl font-bold text-white">📅 Attendance History</h2>
                                 <div className="flex items-center gap-3">
                                     {message && (
                                         <span className="text-xs text-white/60 bg-white/5 px-2 py-1 rounded-lg">
@@ -197,26 +197,26 @@ export function AttendanceHistoryModal({ isOpen, onClose }: AttendanceHistoryMod
                                     )}
                                     <button
                                         onClick={onClose}
-                                        className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
+                                        className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
                                     >
-                                        <X className="w-5 h-5 text-white/60" />
+                                        <X className="w-4 h-4 md:w-5 md:h-5 text-white/60" />
                                     </button>
                                 </div>
                             </div>
 
                             {/* Date Navigator */}
-                            <div className="flex items-center justify-between mb-4 p-4 rounded-2xl bg-white/5 border border-white/10">
+                            <div className="flex items-center justify-between mb-3 md:mb-4 p-2.5 md:p-4 rounded-2xl bg-white/5 border border-white/10">
                                 <button
                                     onClick={goToPreviousDay}
-                                    className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
+                                    className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
                                 >
-                                    <ChevronLeft className="w-5 h-5 text-white" />
+                                    <ChevronLeft className="w-4 h-4 md:w-5 md:h-5 text-white" />
                                 </button>
                                 <div className="text-center">
                                     <div className="relative group">
-                                        <p className="text-white font-semibold cursor-pointer flex items-center justify-center gap-2">
+                                        <p className="text-white font-semibold text-sm md:text-base cursor-pointer flex items-center justify-center gap-1.5 md:gap-2">
                                             {displayDate}
-                                            <Calendar className="w-5 h-5 text-white" />
+                                            <Calendar className="w-4 h-4 md:w-5 md:h-5 text-white" />
                                         </p>
                                         <input
                                             type="date"
@@ -249,12 +249,12 @@ export function AttendanceHistoryModal({ isOpen, onClose }: AttendanceHistoryMod
                                     onClick={goToNextDay}
                                     className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
                                 >
-                                    <ChevronRight className="w-5 h-5 text-white" />
+                                    <ChevronRight className="w-4 h-4 md:w-5 md:h-5 text-white" />
                                 </button>
                             </div>
 
                             {/* Toggle: Show all subjects */}
-                            <div className="flex items-center justify-between mb-4 px-1">
+                            <div className="flex items-center justify-between mb-3 md:mb-4 px-1">
                                 <span className="text-sm text-white/50">
                                     {showAllSubjects ? 'All Subjects' : 'Scheduled Classes Only'}
                                 </span>
@@ -286,7 +286,7 @@ export function AttendanceHistoryModal({ isOpen, onClose }: AttendanceHistoryMod
                             )}
 
                             {/* Attendance List */}
-                            <div className="space-y-3 max-h-[350px] overflow-y-auto pr-2">
+                            <div className="space-y-2 md:space-y-3 max-h-[350px] overflow-y-auto pr-1 md:pr-2">
                                 {subjectsToShow.length === 0 ? (
                                     <div className="text-center py-8 text-white/50">
                                         {subjects.length === 0
@@ -297,17 +297,17 @@ export function AttendanceHistoryModal({ isOpen, onClose }: AttendanceHistoryMod
                                     attendanceForDate.map(({ subject, sessions, scheduledTimes, isScheduled }) => (
                                         <div
                                             key={subject.id}
-                                            className="p-4 rounded-2xl bg-white/5 border border-white/10"
+                                            className="p-3 md:p-4 rounded-2xl bg-white/5 border border-white/10"
                                         >
                                             {/* Subject Header */}
                                             <div className="flex items-center justify-between mb-2">
-                                                <div className="flex items-center gap-3">
+                                                <div className="flex items-center gap-2 md:gap-3">
                                                     <div
                                                         className="w-3 h-3 rounded-full flex-shrink-0"
                                                         style={{ backgroundColor: subject.color_code }}
                                                     />
                                                     <div>
-                                                        <p className="text-white font-medium">{subject.name}</p>
+                                                        <p className="text-white font-medium text-sm md:text-base">{subject.name}</p>
                                                         <div className="flex items-center gap-2">
                                                             {subject.code && (
                                                                 <span className="text-xs text-white/40">{subject.code}</span>
@@ -346,7 +346,7 @@ export function AttendanceHistoryModal({ isOpen, onClose }: AttendanceHistoryMod
                                                                     handleStatusChange(subject.id, 1, status)
                                                                 )}
                                                                 disabled={loading}
-                                                                className={`w-7 h-7 rounded flex items-center justify-center transition-all bg-white/5 text-white/40 hover:bg-${status === 'present' ? 'green' : status === 'absent' ? 'red' : 'yellow'}-500/20 hover:text-${status === 'present' ? 'green' : status === 'absent' ? 'red' : 'yellow'}-400`}
+                                                                className={`w-6 h-6 md:w-7 md:h-7 rounded flex items-center justify-center transition-all bg-white/5 text-white/40 hover:bg-${status === 'present' ? 'green' : status === 'absent' ? 'red' : 'yellow'}-500/20 hover:text-${status === 'present' ? 'green' : status === 'absent' ? 'red' : 'yellow'}-400`}
                                                             >
                                                                 {status === 'present' && <Check className="w-3 h-3" />}
                                                                 {status === 'absent' && <XIcon className="w-3 h-3" />}
@@ -360,7 +360,7 @@ export function AttendanceHistoryModal({ isOpen, onClose }: AttendanceHistoryMod
                                                     {sessions.map((session) => (
                                                         <div
                                                             key={session.id || `session-${session.session_number}`}
-                                                            className="flex items-center justify-between pl-6 py-2 rounded-xl bg-white/5"
+                                                            className="flex items-center justify-between pl-4 md:pl-6 py-1.5 md:py-2 rounded-xl bg-white/5"
                                                         >
                                                             <div className="flex flex-col">
                                                                 <span className="text-sm text-white/50">
@@ -381,7 +381,7 @@ export function AttendanceHistoryModal({ isOpen, onClose }: AttendanceHistoryMod
                                                                         session.id.startsWith('virtual') ? undefined : session.id
                                                                     )}
                                                                     disabled={loading}
-                                                                    className={`w-7 h-7 rounded flex items-center justify-center transition-all ${session.status === 'present'
+                                                                    className={`w-6 h-6 md:w-7 md:h-7 rounded flex items-center justify-center transition-all ${session.status === 'present'
                                                                         ? 'bg-green-500 text-white'
                                                                         : 'bg-white/5 text-white/40 hover:bg-green-500/20 hover:text-green-400'
                                                                         }`}
@@ -396,7 +396,7 @@ export function AttendanceHistoryModal({ isOpen, onClose }: AttendanceHistoryMod
                                                                         session.id.startsWith('virtual') ? undefined : session.id
                                                                     )}
                                                                     disabled={loading}
-                                                                    className={`w-7 h-7 rounded flex items-center justify-center transition-all ${session.status === 'absent'
+                                                                    className={`w-6 h-6 md:w-7 md:h-7 rounded flex items-center justify-center transition-all ${session.status === 'absent'
                                                                         ? 'bg-red-500 text-white'
                                                                         : 'bg-white/5 text-white/40 hover:bg-red-500/20 hover:text-red-400'
                                                                         }`}
@@ -411,7 +411,7 @@ export function AttendanceHistoryModal({ isOpen, onClose }: AttendanceHistoryMod
                                                                         session.id.startsWith('virtual') ? undefined : session.id
                                                                     )}
                                                                     disabled={loading}
-                                                                    className={`w-7 h-7 rounded flex items-center justify-center transition-all ${session.status === 'cancelled'
+                                                                    className={`w-6 h-6 md:w-7 md:h-7 rounded flex items-center justify-center transition-all ${session.status === 'cancelled'
                                                                         ? 'bg-yellow-500 text-white'
                                                                         : 'bg-white/5 text-white/40 hover:bg-yellow-500/20 hover:text-yellow-400'
                                                                         }`}
