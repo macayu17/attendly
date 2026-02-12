@@ -169,13 +169,13 @@ export function TimetableSection({ weekStart, onNextWeek, onPrevWeek, onJumpToTo
                         <button
                             key={day.value}
                             onClick={() => setSelectedDay(day.value)}
-                            className={`px-3 md:px-4 py-1.5 md:py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all snap-center flex flex-col items-center ${selectedDay === day.value
+                            className={`px-3 md:px-4 py-1.5 md:py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all snap-center flex flex-col md:flex-row items-center md:items-baseline md:gap-1.5 ${selectedDay === day.value
                                 ? 'bg-white text-black shadow-lg shadow-white/10'
                                 : 'bg-white/5 text-muted hover:bg-white/10'
                                 }`}
                         >
                             <span>{day.label}</span>
-                            <span className={`text-[10px] font-normal ${selectedDay === day.value ? 'text-black/60' : 'text-white/40'}`}>{format(dayDate, 'd/M')}</span>
+                            <span className={`text-[10px] md:text-xs font-normal ${selectedDay === day.value ? 'text-black/60' : 'text-white/40'}`}>{format(dayDate, 'd/M')}</span>
                         </button>
                     )
                 })}
