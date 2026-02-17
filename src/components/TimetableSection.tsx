@@ -34,6 +34,8 @@ export function TimetableSection({ weekStart, onNextWeek, onPrevWeek, onJumpToTo
         attendanceLogs,
         holidays,
         fetchHolidays,
+        events,
+        fetchEvents,
         loading,
     } = useAttendanceStore()
     const { user } = useAuthStore()
@@ -48,9 +50,12 @@ export function TimetableSection({ weekStart, onNextWeek, onPrevWeek, onJumpToTo
         if (subjects.length > 0) {
             const subjectIds = subjects.map(s => s.id)
             fetchTimetable(subjectIds)
-            if (user) fetchHolidays(user.id)
+            if (user) {
+                fetchHolidays(user.id)
+                fetchEvents(user.id)
+            }
         }
-    }, [subjects, fetchTimetable, fetchHolidays, user])
+    }, [subjects, fetchTimetable, fetchHolidays, fetchEvents, user])
 
     useEffect(() => {
         return () => {
@@ -116,6 +121,12 @@ export function TimetableSection({ weekStart, onNextWeek, onPrevWeek, onJumpToTo
     const selectedDate = addDays(weekStart, dayOffset)
 
     const holiday = holidays.find(h => isSameDay(parseISO(h.date), selectedDate))
+    const selectedDateStr = format(selectedDate, 'yyyy-MM-dd')
+    const blockingEvent = events.find(e =>
+        selectedDateStr >= e.start_date &&
+        selectedDateStr <= e.end_date &&
+        !e.counts_attendance
+    )
 
     // Check if showing current week to conditionally show "Jump to Today"
     const isCurrentWeek = isSameDay(startOfWeek(new Date(), { weekStartsOn: 1 }), weekStart)
@@ -199,6 +210,17 @@ export function TimetableSection({ weekStart, onNextWeek, onPrevWeek, onJumpToTo
                                 </div>
                                 <h3 className="text-2xl font-bold text-white mb-2">{holiday.name}</h3>
                                 <p className="text-muted mb-6">Enjoy your holiday! No classes scheduled.</p>
+                                <div className="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-xs font-mono text-muted">
+                                    {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+                                </div>
+                            </div>
+                        ) : blockingEvent ? (
+                            <div className="flex flex-col items-center justify-center py-12 animate-in fade-in zoom-in-95 duration-500">
+                                <div className="w-20 h-20 rounded-full bg-indigo-500/10 flex items-center justify-center mb-6 ring-4 ring-indigo-500/20">
+                                    <span className="text-3xl">📅</span>
+                                </div>
+                                <h3 className="text-2xl font-bold text-white mb-2">{blockingEvent.name}</h3>
+                                <p className="text-muted mb-6">Event Day - Attendance not counted.</p>
                                 <div className="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-xs font-mono text-muted">
                                     {format(selectedDate, 'EEEE, MMMM d, yyyy')}
                                 </div>

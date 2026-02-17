@@ -58,6 +58,13 @@ export function SubjectCard({ subject, index = 0 }: SubjectCardProps) {
         await deleteSubject(subject.id)
     }
 
+    const { events } = useAttendanceStore()
+    const blockingEvent = events.find(e =>
+        today >= e.start_date &&
+        today <= e.end_date &&
+        !e.counts_attendance
+    )
+
     return (
         <>
             <motion.div
@@ -138,32 +145,41 @@ export function SubjectCard({ subject, index = 0 }: SubjectCardProps) {
                     </div>
                     <div className="flex flex-row gap-1 shrink-0 ml-1">
                         <button
-                            onClick={() => handleMark('present')}
-                            disabled={loading}
+                            onClick={() => !blockingEvent && handleMark('present')}
+                            disabled={loading || !!blockingEvent}
                             className={`w-7 h-7 rounded-md flex items-center justify-center transition-all duration-200 ${todayLog?.status === 'present'
                                 ? 'bg-green-500 text-white shadow-[0_0_8px_rgba(34,197,94,0.4)]'
-                                : 'bg-green-500/10 hover:bg-green-500/20 text-green-400'
+                                : blockingEvent
+                                    ? 'bg-white/5 text-white/20 cursor-not-allowed'
+                                    : 'bg-green-500/10 hover:bg-green-500/20 text-green-400'
                                 }`}
+                            title={blockingEvent ? `Event: ${blockingEvent.name}` : 'Mark Present'}
                         >
                             <Check className="w-3.5 h-3.5" />
                         </button>
                         <button
-                            onClick={() => handleMark('absent')}
-                            disabled={loading}
+                            onClick={() => !blockingEvent && handleMark('absent')}
+                            disabled={loading || !!blockingEvent}
                             className={`w-7 h-7 rounded-md flex items-center justify-center transition-all duration-200 ${todayLog?.status === 'absent'
                                 ? 'bg-red-500 text-white shadow-[0_0_8px_rgba(239,68,68,0.4)]'
-                                : 'bg-red-500/10 hover:bg-red-500/20 text-red-400'
+                                : blockingEvent
+                                    ? 'bg-white/5 text-white/20 cursor-not-allowed'
+                                    : 'bg-red-500/10 hover:bg-red-500/20 text-red-400'
                                 }`}
+                            title={blockingEvent ? `Event: ${blockingEvent.name}` : 'Mark Absent'}
                         >
                             <X className="w-3.5 h-3.5" />
                         </button>
                         <button
-                            onClick={() => handleMark('cancelled')}
-                            disabled={loading}
+                            onClick={() => !blockingEvent && handleMark('cancelled')}
+                            disabled={loading || !!blockingEvent}
                             className={`w-7 h-7 rounded-md flex items-center justify-center transition-all duration-200 ${todayLog?.status === 'cancelled'
                                 ? 'bg-white/20 text-white shadow-[0_0_8px_rgba(255,255,255,0.1)]'
-                                : 'bg-white/5 hover:bg-white/10 text-foreground-muted'
+                                : blockingEvent
+                                    ? 'bg-white/5 text-white/20 cursor-not-allowed'
+                                    : 'bg-white/5 hover:bg-white/10 text-foreground-muted'
                                 }`}
+                            title={blockingEvent ? `Event: ${blockingEvent.name}` : 'Mark Cancelled'}
                         >
                             <Minus className="w-3.5 h-3.5" />
                         </button>
@@ -196,39 +212,53 @@ export function SubjectCard({ subject, index = 0 }: SubjectCardProps) {
                 {/* Desktop: 3-column button grid */}
                 <div className="hidden md:grid grid-cols-3 gap-2">
                     <button
-                        onClick={() => handleMark('present')}
-                        disabled={loading}
+                        onClick={() => !blockingEvent && handleMark('present')}
+                        disabled={loading || !!blockingEvent}
                         className={`btn glass-panel border-0 py-2 rounded-xl flex justify-center transition-all duration-200 ${todayLog?.status === 'present'
                             ? 'bg-green-500 text-white shadow-[0_0_15px_rgba(34,197,94,0.4)]'
-                            : 'bg-green-500/10 hover:bg-green-500/20 text-green-400'
+                            : blockingEvent
+                                ? 'bg-white/5 text-white/20 cursor-not-allowed'
+                                : 'bg-green-500/10 hover:bg-green-500/20 text-green-400'
                             }`}
+                        title={blockingEvent ? `Event: ${blockingEvent.name}` : 'Mark Present'}
                     >
                         <Check className="w-4 h-4" />
                     </button>
 
                     <button
-                        onClick={() => handleMark('absent')}
-                        disabled={loading}
+                        onClick={() => !blockingEvent && handleMark('absent')}
+                        disabled={loading || !!blockingEvent}
                         className={`btn glass-panel border-0 py-2 rounded-xl flex justify-center transition-all duration-200 ${todayLog?.status === 'absent'
                             ? 'bg-red-500 text-white shadow-[0_0_15px_rgba(239,68,68,0.4)]'
-                            : 'bg-red-500/10 hover:bg-red-500/20 text-red-400'
+                            : blockingEvent
+                                ? 'bg-white/5 text-white/20 cursor-not-allowed'
+                                : 'bg-red-500/10 hover:bg-red-500/20 text-red-400'
                             }`}
+                        title={blockingEvent ? `Event: ${blockingEvent.name}` : 'Mark Absent'}
                     >
                         <X className="w-4 h-4" />
                     </button>
 
                     <button
-                        onClick={() => handleMark('cancelled')}
-                        disabled={loading}
+                        onClick={() => !blockingEvent && handleMark('cancelled')}
+                        disabled={loading || !!blockingEvent}
                         className={`btn glass-panel border-0 py-2 rounded-xl flex justify-center transition-all duration-200 ${todayLog?.status === 'cancelled'
                             ? 'bg-white/20 text-white shadow-[0_0_15px_rgba(255,255,255,0.1)]'
-                            : 'bg-white/5 hover:bg-white/10 text-foreground-muted'
+                            : blockingEvent
+                                ? 'bg-white/5 text-white/20 cursor-not-allowed'
+                                : 'bg-white/5 hover:bg-white/10 text-foreground-muted'
                             }`}
+                        title={blockingEvent ? `Event: ${blockingEvent.name}` : 'Mark Cancelled'}
                     >
                         <Minus className="w-4 h-4" />
                     </button>
                 </div>
-                {message && (
+                {blockingEvent && (
+                    <div className="mt-2 text-xs text-indigo-300/80 font-medium text-center bg-indigo-500/10 py-1 rounded">
+                        📅 {blockingEvent.name}
+                    </div>
+                )}
+                {message && !blockingEvent && (
                     <div className="mt-3 text-xs text-white/60">
                         {message}
                     </div>
