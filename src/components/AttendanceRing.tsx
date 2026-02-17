@@ -45,7 +45,10 @@ export function AttendanceRing({
             </svg>
             {/* Percentage text */}
             <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-lg font-semibold font-mono text-white">
+                <span
+                    className="font-bold font-mono text-white"
+                    style={{ fontSize: Math.max(10, size * 0.25) }}
+                >
                     {Math.round(percentage)}
                 </span>
             </div>

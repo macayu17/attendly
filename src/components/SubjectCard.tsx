@@ -66,7 +66,7 @@ export function SubjectCard({ subject, index = 0 }: SubjectCardProps) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="glass-card p-3 md:p-5 relative group"
+                className="glass-card p-2.5 md:p-4 relative group"
             >
                 <div className="flex justify-between items-start mb-2 md:mb-4">
                     <div
@@ -114,9 +114,9 @@ export function SubjectCard({ subject, index = 0 }: SubjectCardProps) {
                 </div>
 
                 {/* Mobile: ring + stats + buttons in one row */}
-                <div className="flex md:hidden items-center gap-3 mb-2">
-                    <AttendanceRing percentage={subject.percentage} size={48} strokeWidth={4} color={subject.color_code} />
-                    <div className="flex-1">
+                <div className="flex md:hidden items-center gap-2.5 mb-1.5">
+                    <AttendanceRing percentage={subject.percentage} size={42} strokeWidth={4} color={subject.color_code} />
+                    <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-center mb-0.5">
                             <span className="text-xs text-foreground-muted">Status</span>
                             <span className={`text-xs font-medium ${isAboveGoal ? 'text-green-400' : 'text-amber-400'}`}>
@@ -124,16 +124,24 @@ export function SubjectCard({ subject, index = 0 }: SubjectCardProps) {
                             </span>
                         </div>
                         <div className="flex justify-between items-center">
-                            <span className="text-xs text-foreground-muted">Buffer</span>
-                            <span className="text-xs font-mono text-white">{bunkBuffer}</span>
+                            <span className="text-xs text-foreground-muted">Progress</span>
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-xs font-mono text-white/90">
+                                    {subject.present}/{total}
+                                </span>
+                                <span className="text-[10px] text-foreground-muted">•</span>
+                                <span className={`text-xs font-mono ${Number(bunkBuffer) < 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                                    {Number(bunkBuffer) > 0 ? '+' : ''}{bunkBuffer}
+                                </span>
+                            </div>
                         </div>
                     </div>
-                    <div className="flex flex-row gap-1 shrink-0">
+                    <div className="flex flex-row gap-1 shrink-0 ml-1">
                         <button
                             onClick={() => handleMark('present')}
                             disabled={loading}
-                            className={`w-8 h-8 rounded-md flex items-center justify-center transition-all duration-200 ${todayLog?.status === 'present'
-                                ? 'bg-green-500 text-white shadow-[0_0_10px_rgba(34,197,94,0.4)]'
+                            className={`w-7 h-7 rounded-md flex items-center justify-center transition-all duration-200 ${todayLog?.status === 'present'
+                                ? 'bg-green-500 text-white shadow-[0_0_8px_rgba(34,197,94,0.4)]'
                                 : 'bg-green-500/10 hover:bg-green-500/20 text-green-400'
                                 }`}
                         >
@@ -142,8 +150,8 @@ export function SubjectCard({ subject, index = 0 }: SubjectCardProps) {
                         <button
                             onClick={() => handleMark('absent')}
                             disabled={loading}
-                            className={`w-8 h-8 rounded-md flex items-center justify-center transition-all duration-200 ${todayLog?.status === 'absent'
-                                ? 'bg-red-500 text-white shadow-[0_0_10px_rgba(239,68,68,0.4)]'
+                            className={`w-7 h-7 rounded-md flex items-center justify-center transition-all duration-200 ${todayLog?.status === 'absent'
+                                ? 'bg-red-500 text-white shadow-[0_0_8px_rgba(239,68,68,0.4)]'
                                 : 'bg-red-500/10 hover:bg-red-500/20 text-red-400'
                                 }`}
                         >
@@ -152,8 +160,8 @@ export function SubjectCard({ subject, index = 0 }: SubjectCardProps) {
                         <button
                             onClick={() => handleMark('cancelled')}
                             disabled={loading}
-                            className={`w-8 h-8 rounded-md flex items-center justify-center transition-all duration-200 ${todayLog?.status === 'cancelled'
-                                ? 'bg-white/20 text-white shadow-[0_0_10px_rgba(255,255,255,0.1)]'
+                            className={`w-7 h-7 rounded-md flex items-center justify-center transition-all duration-200 ${todayLog?.status === 'cancelled'
+                                ? 'bg-white/20 text-white shadow-[0_0_8px_rgba(255,255,255,0.1)]'
                                 : 'bg-white/5 hover:bg-white/10 text-foreground-muted'
                                 }`}
                         >
@@ -163,13 +171,19 @@ export function SubjectCard({ subject, index = 0 }: SubjectCardProps) {
                 </div>
 
                 {/* Desktop: original ring + stats row */}
-                <div className="hidden md:flex items-center gap-6 mb-6">
+                <div className="hidden md:flex items-center gap-6 mb-4">
                     <AttendanceRing percentage={subject.percentage} size={64} strokeWidth={5} color={subject.color_code} />
                     <div className="flex-1">
                         <div className="flex justify-between items-center mb-1">
                             <span className="text-xs text-foreground-muted">Status</span>
                             <span className={`text-xs font-medium ${isAboveGoal ? 'text-green-400' : 'text-amber-400'}`}>
                                 {isAboveGoal ? 'On Track' : 'Risk'}
+                            </span>
+                        </div>
+                        <div className="flex justify-between items-center mb-1">
+                            <span className="text-xs text-foreground-muted">Classes</span>
+                            <span className="text-xs font-mono text-white">
+                                {subject.present}/{total}
                             </span>
                         </div>
                         <div className="flex justify-between items-center mb-1">
