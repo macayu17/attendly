@@ -146,6 +146,41 @@ export interface Database {
                     created_at?: string
                 }
             }
+            placement_sessions: {
+                Row: {
+                    id: string
+                    user_id: string
+                    name: string
+                    date: string
+                    start_time: string | null
+                    end_time: string | null
+                    notes: string | null
+                    status: 'pending' | 'attended' | 'missed'
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    user_id: string
+                    name: string
+                    date: string
+                    start_time?: string | null
+                    end_time?: string | null
+                    notes?: string | null
+                    status?: 'pending' | 'attended' | 'missed'
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    user_id?: string
+                    name?: string
+                    date?: string
+                    start_time?: string | null
+                    end_time?: string | null
+                    notes?: string | null
+                    status?: 'pending' | 'attended' | 'missed'
+                    created_at?: string
+                }
+            }
         }
         Views: Record<string, never>
         Functions: Record<string, never>
@@ -159,3 +194,4 @@ export type TimetableEntry = Database['public']['Tables']['timetable']['Row']
 export type AttendanceLog = Database['public']['Tables']['attendance_logs']['Row']
 export type Event = Database['public']['Tables']['events']['Row']
 export type Holiday = Database['public']['Tables']['holidays']['Row']
+export type PlacementSession = Database['public']['Tables']['placement_sessions']['Row']

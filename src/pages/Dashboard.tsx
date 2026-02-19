@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, RefreshCw, BookOpen, Home, TrendingUp, Calendar, Zap, History, Settings } from 'lucide-react'
+import { Plus, BookOpen, Home, TrendingUp, Calendar, Zap, History, Settings, Briefcase } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useAttendanceStore } from '@/stores/attendanceStore'
 import { startOfWeek, addDays, subDays, format } from 'date-fns'
@@ -16,6 +16,7 @@ import PixelBlast from '@/components/PixelBlast'
 import { AddClassModal } from '@/components/AddClassModal'
 import { HolidaysModal } from '@/components/HolidaysModal'
 import { EventsModal } from '@/components/EventsModal'
+import { PlacementPage } from '@/pages/PlacementPage'
 import { PartyPopper } from 'lucide-react'
 
 export function Dashboard() {
@@ -27,6 +28,7 @@ export function Dashboard() {
     const [showHistory, setShowHistory] = useState(false)
     const [showHolidays, setShowHolidays] = useState(false)
     const [showEvents, setShowEvents] = useState(false)
+    const [activeView, setActiveView] = useState<'dashboard' | 'placement'>('dashboard')
 
     useEffect(() => {
         if (user) {
@@ -142,7 +144,7 @@ export function Dashboard() {
         {
             icon: <Home className="w-5 h-5 text-white" />,
             label: 'Home',
-            onClick: () => window.scrollTo({ top: 0, behavior: 'smooth' })
+            onClick: () => { setActiveView('dashboard'); window.scrollTo({ top: 0, behavior: 'smooth' }) }
         },
         {
             icon: <BookOpen className="w-5 h-5 text-white" />,
@@ -155,9 +157,9 @@ export function Dashboard() {
             onClick: () => setShowAddModal(true)
         },
         {
-            icon: <RefreshCw className={`w-5 h-5 text-white ${loading ? 'animate-spin' : ''}`} />,
-            label: 'Refresh',
-            onClick: () => user && fetchSubjects(user.id)
+            icon: <Briefcase className={`w-5 h-5 ${activeView === 'placement' ? 'text-amber-400' : 'text-white'}`} />,
+            label: 'Placements',
+            onClick: () => { setActiveView(activeView === 'placement' ? 'dashboard' : 'placement'); window.scrollTo({ top: 0, behavior: 'smooth' }) }
         },
         {
             icon: <History className="w-5 h-5 text-white" />,
@@ -179,12 +181,13 @@ export function Dashboard() {
             label: 'Settings',
             onClick: () => setShowSettings(true)
         },
-    ], [user, loading, fetchSubjects, signOut])
+    ], [user, loading, fetchSubjects, signOut, activeView])
 
     const navItems = useMemo(() => [
-        { label: 'Overview', href: '#overview', onClick: () => window.scrollTo({ top: 0, behavior: 'smooth' }) },
-        { label: 'Subjects', href: '#subjects', onClick: () => document.getElementById('subjects-section')?.scrollIntoView({ behavior: 'smooth' }) },
-        { label: 'Schedule', href: '#schedule', onClick: () => document.getElementById('schedule')?.scrollIntoView({ behavior: 'smooth' }) },
+        { label: 'Overview', href: '#overview', onClick: () => { setActiveView('dashboard'); window.scrollTo({ top: 0, behavior: 'smooth' }) } },
+        { label: 'Subjects', href: '#subjects', onClick: () => { setActiveView('dashboard'); setTimeout(() => document.getElementById('subjects-section')?.scrollIntoView({ behavior: 'smooth' }), 50) } },
+        { label: 'Schedule', href: '#schedule', onClick: () => { setActiveView('dashboard'); setTimeout(() => document.getElementById('schedule')?.scrollIntoView({ behavior: 'smooth' }), 50) } },
+        { label: 'Placements', href: '#placements', onClick: () => { setActiveView('placement'); window.scrollTo({ top: 0, behavior: 'smooth' }) } },
         { label: 'Settings', href: '#settings', onClick: () => setShowSettings(true) },
     ], [])
 
@@ -232,155 +235,161 @@ export function Dashboard() {
                 </div>
             </div>
 
-            {/* Timetable Section */}
-            <div id="schedule" className="container mb-16 md:mb-96 relative z-10">
-                <TimetableSection
-                    weekStart={weekStart}
-                    onNextWeek={handleNextWeek}
-                    onPrevWeek={handlePrevWeek}
-                    onJumpToToday={handleJumpToToday}
-                />
-            </div>
+            {activeView === 'placement' ? (
+                <PlacementPage />
+            ) : (
+                <>
+                    {/* Timetable Section */}
+                    <div id="schedule" className="container mb-16 md:mb-96 relative z-10">
+                        <TimetableSection
+                            weekStart={weekStart}
+                            onNextWeek={handleNextWeek}
+                            onPrevWeek={handlePrevWeek}
+                            onJumpToToday={handleJumpToToday}
+                        />
+                    </div>
 
-            {/* Hero Section with Welcome */}
-            <div className="container pt-4 pb-8 md:pt-8 md:pb-16 relative z-10">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                    className="mb-6 md:mb-8"
-                >
-                    <h1 className="text-2xl md:text-5xl font-bold text-white mb-2 md:mb-3 tracking-tight leading-tight">
-                        {greeting}, <span className="text-white/50 block md:inline">{user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Student'}</span>
-                    </h1>
-                    <div className="flex flex-wrap items-center gap-2 md:gap-4 text-white/60 mb-2">
-                        <p className="hidden md:block text-sm md:text-lg font-medium">{today}</p>
-                        {nextClass ? (
-                            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-sm animate-in fade-in slide-in-from-left-4">
-                                <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: nextClass.subject.color_code }} />
-                                <span className="text-white">Next: {nextClass.subject.name}</span>
-                                <span className="text-white/40">{nextClass.timeDisplay}</span>
-                            </div>
-                        ) : (
-                            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-sm">
-                                {events.some(e => format(currentTime, 'yyyy-MM-dd') >= e.start_date && format(currentTime, 'yyyy-MM-dd') <= e.end_date && !e.counts_attendance) ? (
-                                    <span className="text-indigo-400">📅 Event Day</span>
-                                ) : holidays.some(h => h.date === format(currentTime, 'yyyy-MM-dd')) ? (
-                                    <span className="text-pink-400">🎉 Holiday</span>
+                    {/* Hero Section with Welcome */}
+                    <div className="container pt-4 pb-8 md:pt-8 md:pb-16 relative z-10">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5 }}
+                            className="mb-6 md:mb-8"
+                        >
+                            <h1 className="text-2xl md:text-5xl font-bold text-white mb-2 md:mb-3 tracking-tight leading-tight">
+                                {greeting}, <span className="text-white/50 block md:inline">{user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Student'}</span>
+                            </h1>
+                            <div className="flex flex-wrap items-center gap-2 md:gap-4 text-white/60 mb-2">
+                                <p className="hidden md:block text-sm md:text-lg font-medium">{today}</p>
+                                {nextClass ? (
+                                    <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-sm animate-in fade-in slide-in-from-left-4">
+                                        <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: nextClass.subject.color_code }} />
+                                        <span className="text-white">Next: {nextClass.subject.name}</span>
+                                        <span className="text-white/40">{nextClass.timeDisplay}</span>
+                                    </div>
                                 ) : (
-                                    <span className="text-white/40">No more classes today</span>
+                                    <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-sm">
+                                        {events.some(e => format(currentTime, 'yyyy-MM-dd') >= e.start_date && format(currentTime, 'yyyy-MM-dd') <= e.end_date && !e.counts_attendance) ? (
+                                            <span className="text-indigo-400">📅 Event Day</span>
+                                        ) : holidays.some(h => h.date === format(currentTime, 'yyyy-MM-dd')) ? (
+                                            <span className="text-pink-400">🎉 Holiday</span>
+                                        ) : (
+                                            <span className="text-white/40">No more classes today</span>
+                                        )}
+                                    </div>
                                 )}
+                            </div>
+                            <p className="text-muted text-sm md:text-lg">Track your attendance and BUNK smartly.</p>                </motion.div>
+
+                        {/* Stats Row */}
+                        <div id="overview" className="grid grid-cols-3 gap-2 md:gap-6 mb-10">
+                            {/* Main Stat Card */}
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.5, delay: 0.1 }}
+                                className="col-span-1 card p-3 md:p-8 flex flex-col justify-between relative overflow-hidden min-h-0 md:min-h-[200px] group hover:border-white/10 transition-colors"
+                            >
+                                <div className="absolute -top-10 -right-10 w-32 h-32 bg-gradient-to-br from-indigo-500/20 to-purple-600/10 blur-3xl rounded-full pointer-events-none group-hover:scale-150 transition-transform duration-500" />
+                                <div className="flex items-center gap-1.5 md:gap-2 mb-2 md:mb-4">
+                                    <div className="w-6 h-6 md:w-8 md:h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                                        <TrendingUp className="w-3 h-3 md:w-4 md:h-4 text-white" />
+                                    </div>
+                                    <span className="text-[10px] md:text-xs text-muted font-medium uppercase tracking-wider">Overall</span>
+                                </div>
+                                <div>
+                                    <span className="text-2xl md:text-6xl font-bold text-white tracking-tighter block">
+                                        {totalClasses > 0 ? Math.round(overallPercentage) : '--'}%
+                                    </span>
+                                    {totalClasses > 0 && (
+                                        <span className={`hidden md:inline-block mt-3 text-xs font-medium px-3 py-1.5 rounded-full ${overallPercentage >= 75 ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
+                                            {overallPercentage >= 75 ? '✓ On Track' : '! Needs Work'}
+                                        </span>
+                                    )}
+                                </div>
+                            </motion.div>
+
+                            {/* Bunks Card */}
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.5, delay: 0.2 }}
+                                className="card p-3 md:p-8 flex flex-col justify-between min-h-0 md:min-h-[200px] group hover:border-white/10 transition-colors"
+                            >
+                                <div className="flex items-center gap-1.5 md:gap-2 mb-2 md:mb-4">
+                                    <div className="w-6 h-6 md:w-8 md:h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+                                        <Zap className="w-3 h-3 md:w-4 md:h-4 text-white" />
+                                    </div>
+                                    <span className="text-[10px] md:text-xs text-muted font-medium uppercase tracking-wider">Bunks</span>
+                                </div>
+                                <div>
+                                    <span className="text-2xl md:text-6xl font-bold text-white tracking-tighter">{overallBunkBuffer}</span>
+                                    <p className="text-muted text-xs md:text-sm mt-1 md:mt-2 hidden md:block">classes you can skip</p>
+                                </div>
+                            </motion.div>
+
+                            {/* Classes Card */}
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.5, delay: 0.3 }}
+                                className="card p-3 md:p-8 flex flex-col justify-between min-h-0 md:min-h-[200px] group hover:border-white/10 transition-colors"
+                            >
+                                <div className="flex items-center gap-1.5 md:gap-2 mb-2 md:mb-4">
+                                    <div className="w-6 h-6 md:w-8 md:h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                                        <Calendar className="w-3 h-3 md:w-4 md:h-4 text-white" />
+                                    </div>
+                                    <span className="text-[10px] md:text-xs text-muted font-medium uppercase tracking-wider">Present</span>
+                                </div>
+                                <div>
+                                    <span className="text-2xl md:text-6xl font-bold text-white tracking-tighter">{totalPresent}</span>
+                                    <p className="text-muted text-xs md:text-sm mt-1 md:mt-2 hidden md:block">classes attended</p>
+                                </div>
+                            </motion.div>
+                        </div>
+
+                        {/* Subjects Section */}
+                        <div id="subjects-section" className="mb-8 flex items-center justify-between">
+                            <h2 className="text-2xl font-bold text-white">
+                                My Subjects
+                            </h2>
+                            <span className="text-xs text-muted font-mono bg-white/5 px-3 py-1.5 rounded-full">{subjects.length} TRACKED</span>
+                        </div>
+
+                        {subjects.length === 0 ? (
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="card p-16 text-center border-dashed border-2 border-white/10 bg-transparent"
+                            >
+                                <div className="w-20 h-20 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl flex items-center justify-center mx-auto mb-8">
+                                    <BookOpen className="w-10 h-10 text-muted" />
+                                </div>
+                                <h3 className="text-2xl font-semibold text-white mb-3">No subjects tracked yet</h3>
+                                <p className="text-muted text-base mb-8 max-w-md mx-auto">
+                                    Add your first subject to start tracking attendance and calculating safe bunks.
+                                </p>
+                                <button
+                                    onClick={() => setShowAddModal(true)}
+                                    className="inline-flex items-center gap-2 bg-white text-black font-semibold px-6 py-3 rounded-full hover:bg-white/90 transition-colors"
+                                >
+                                    <Plus className="w-5 h-5" />
+                                    Add First Subject
+                                </button>
+                            </motion.div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
+                                <AnimatePresence mode='popLayout'>
+                                    {subjects.map((subject, index) => (
+                                        <SubjectCard key={subject.id} subject={subject} index={index} />
+                                    ))}
+                                </AnimatePresence>
                             </div>
                         )}
                     </div>
-                    <p className="text-muted text-sm md:text-lg">Track your attendance and BUNK smartly.</p>                </motion.div>
-
-                {/* Stats Row */}
-                <div id="overview" className="grid grid-cols-3 gap-2 md:gap-6 mb-10">
-                    {/* Main Stat Card */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.1 }}
-                        className="col-span-1 card p-3 md:p-8 flex flex-col justify-between relative overflow-hidden min-h-0 md:min-h-[200px] group hover:border-white/10 transition-colors"
-                    >
-                        <div className="absolute -top-10 -right-10 w-32 h-32 bg-gradient-to-br from-indigo-500/20 to-purple-600/10 blur-3xl rounded-full pointer-events-none group-hover:scale-150 transition-transform duration-500" />
-                        <div className="flex items-center gap-1.5 md:gap-2 mb-2 md:mb-4">
-                            <div className="w-6 h-6 md:w-8 md:h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-                                <TrendingUp className="w-3 h-3 md:w-4 md:h-4 text-white" />
-                            </div>
-                            <span className="text-[10px] md:text-xs text-muted font-medium uppercase tracking-wider">Overall</span>
-                        </div>
-                        <div>
-                            <span className="text-2xl md:text-6xl font-bold text-white tracking-tighter block">
-                                {totalClasses > 0 ? Math.round(overallPercentage) : '--'}%
-                            </span>
-                            {totalClasses > 0 && (
-                                <span className={`hidden md:inline-block mt-3 text-xs font-medium px-3 py-1.5 rounded-full ${overallPercentage >= 75 ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
-                                    {overallPercentage >= 75 ? '✓ On Track' : '! Needs Work'}
-                                </span>
-                            )}
-                        </div>
-                    </motion.div>
-
-                    {/* Bunks Card */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.2 }}
-                        className="card p-3 md:p-8 flex flex-col justify-between min-h-0 md:min-h-[200px] group hover:border-white/10 transition-colors"
-                    >
-                        <div className="flex items-center gap-1.5 md:gap-2 mb-2 md:mb-4">
-                            <div className="w-6 h-6 md:w-8 md:h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
-                                <Zap className="w-3 h-3 md:w-4 md:h-4 text-white" />
-                            </div>
-                            <span className="text-[10px] md:text-xs text-muted font-medium uppercase tracking-wider">Bunks</span>
-                        </div>
-                        <div>
-                            <span className="text-2xl md:text-6xl font-bold text-white tracking-tighter">{overallBunkBuffer}</span>
-                            <p className="text-muted text-xs md:text-sm mt-1 md:mt-2 hidden md:block">classes you can skip</p>
-                        </div>
-                    </motion.div>
-
-                    {/* Classes Card */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.3 }}
-                        className="card p-3 md:p-8 flex flex-col justify-between min-h-0 md:min-h-[200px] group hover:border-white/10 transition-colors"
-                    >
-                        <div className="flex items-center gap-1.5 md:gap-2 mb-2 md:mb-4">
-                            <div className="w-6 h-6 md:w-8 md:h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-                                <Calendar className="w-3 h-3 md:w-4 md:h-4 text-white" />
-                            </div>
-                            <span className="text-[10px] md:text-xs text-muted font-medium uppercase tracking-wider">Present</span>
-                        </div>
-                        <div>
-                            <span className="text-2xl md:text-6xl font-bold text-white tracking-tighter">{totalPresent}</span>
-                            <p className="text-muted text-xs md:text-sm mt-1 md:mt-2 hidden md:block">classes attended</p>
-                        </div>
-                    </motion.div>
-                </div>
-
-                {/* Subjects Section */}
-                <div id="subjects-section" className="mb-8 flex items-center justify-between">
-                    <h2 className="text-2xl font-bold text-white">
-                        My Subjects
-                    </h2>
-                    <span className="text-xs text-muted font-mono bg-white/5 px-3 py-1.5 rounded-full">{subjects.length} TRACKED</span>
-                </div>
-
-                {subjects.length === 0 ? (
-                    <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="card p-16 text-center border-dashed border-2 border-white/10 bg-transparent"
-                    >
-                        <div className="w-20 h-20 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl flex items-center justify-center mx-auto mb-8">
-                            <BookOpen className="w-10 h-10 text-muted" />
-                        </div>
-                        <h3 className="text-2xl font-semibold text-white mb-3">No subjects tracked yet</h3>
-                        <p className="text-muted text-base mb-8 max-w-md mx-auto">
-                            Add your first subject to start tracking attendance and calculating safe bunks.
-                        </p>
-                        <button
-                            onClick={() => setShowAddModal(true)}
-                            className="inline-flex items-center gap-2 bg-white text-black font-semibold px-6 py-3 rounded-full hover:bg-white/90 transition-colors"
-                        >
-                            <Plus className="w-5 h-5" />
-                            Add First Subject
-                        </button>
-                    </motion.div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
-                        <AnimatePresence mode='popLayout'>
-                            {subjects.map((subject, index) => (
-                                <SubjectCard key={subject.id} subject={subject} index={index} />
-                            ))}
-                        </AnimatePresence>
-                    </div>
-                )}
-            </div>
+                </>)
+            }
 
             <Dock items={dockItems} />
 
